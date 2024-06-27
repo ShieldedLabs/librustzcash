@@ -160,7 +160,7 @@ panic = 'abort'
 codegen-units = 1
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zcash_unstable, values("zfuture"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zcash_unstable, values("zfuture", "tze", "nsm"))'] }
 
 [patch.crates-io]
 sapling-crypto = { git = "https://github.com/zcash/sapling-crypto", rev = "b1ad3694ee13a2fc5d291ad04721a6252da0993c" }
