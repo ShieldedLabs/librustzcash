@@ -41,7 +41,7 @@ use crate::transaction::components::transparent::builder::TransparentInputInfo;
 #[cfg(not(feature = "transparent-inputs"))]
 use std::convert::Infallible;
 
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 use crate::{
     extensions::transparent::{ExtensionTxBuilder, ToPayload},
     transaction::{
@@ -106,7 +106,7 @@ pub enum Error<FE> {
     /// spend or output was added.
     OrchardBuilderNotAvailable,
     /// An error occurred in constructing the TZE parts of a transaction.
-    #[cfg(zcash_unstable = "zfuture")]
+    #[cfg(zcash_unstable = "tze")]
     TzeBuild(tze::builder::Error),
 }
 
@@ -138,7 +138,7 @@ impl<FE: fmt::Display> fmt::Display for Error<FE> {
                 f,
                 "Cannot create Orchard transactions without an Orchard anchor, or before NU5 activation"
             ),
-            #[cfg(zcash_unstable = "zfuture")]
+            #[cfg(zcash_unstable = "tze")]
             Error::TzeBuild(err) => err.fmt(f),
         }
     }
@@ -292,9 +292,9 @@ pub struct Builder<'a, P, U: sapling::builder::ProverProgress> {
     orchard_saks: Vec<orchard::keys::SpendAuthorizingKey>,
     #[cfg(zcash_unstable = "zsf")]
     zsf_deposit: Option<NonNegativeAmount>,
-    #[cfg(zcash_unstable = "zfuture")]
+    #[cfg(zcash_unstable = "tze")]
     tze_builder: TzeBuilder<'a, TransactionData<Unauthorized>>,
-    #[cfg(not(zcash_unstable = "zfuture"))]
+    #[cfg(not(zcash_unstable = "tze"))]
     tze_builder: std::marker::PhantomData<&'a ()>,
     progress_notifier: U,
 }
@@ -379,9 +379,9 @@ impl<'a, P: consensus::Parameters> Builder<'a, P, ()> {
             orchard_saks: Vec::new(),
             #[cfg(zcash_unstable = "zsf")]
             zsf_deposit: None,
-            #[cfg(zcash_unstable = "zfuture")]
+            #[cfg(zcash_unstable = "tze")]
             tze_builder: TzeBuilder::empty(),
-            #[cfg(not(zcash_unstable = "zfuture"))]
+            #[cfg(not(zcash_unstable = "tze"))]
             tze_builder: std::marker::PhantomData,
             progress_notifier: (),
         }
@@ -538,7 +538,7 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
                 .zsf_deposit
                 .map(Into::into)
                 .unwrap_or(ZatBalance::zero()),
-            #[cfg(zcash_unstable = "zfuture")]
+            #[cfg(zcash_unstable = "tze")]
             self.tze_builder.value_balance()?,
         ];
 
@@ -860,7 +860,7 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
     }
 }
 
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> ExtensionTxBuilder<'a>
     for Builder<'a, P, U>
 {
@@ -966,7 +966,7 @@ mod tests {
 
     use super::{Builder, Error};
 
-    #[cfg(zcash_unstable = "zfuture")]
+    #[cfg(zcash_unstable = "tze")]
     #[cfg(feature = "transparent-inputs")]
     use super::TzeBuilder;
 
@@ -1003,9 +1003,9 @@ mod tests {
             sapling_builder: None,
             #[cfg(zcash_unstable = "zsf")]
             zsf_deposit: None,
-            #[cfg(zcash_unstable = "zfuture")]
+            #[cfg(zcash_unstable = "tze")]
             tze_builder: TzeBuilder::empty(),
-            #[cfg(not(zcash_unstable = "zfuture"))]
+            #[cfg(not(zcash_unstable = "tze"))]
             tze_builder: std::marker::PhantomData,
             progress_notifier: (),
             orchard_builder: None,

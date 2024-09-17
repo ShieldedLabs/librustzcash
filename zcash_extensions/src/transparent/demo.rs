@@ -743,6 +743,7 @@ mod tests {
             None,
             None,
             None,
+            None,
             Some(Bundle {
                 vin: vec![in_c],
                 vout: vec![],

@@ -9,7 +9,7 @@ pub mod fixed;
 pub mod transparent;
 pub mod zip317;
 
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 pub mod tze;
 
 /// A trait that represents the ability to compute the fees that must be paid

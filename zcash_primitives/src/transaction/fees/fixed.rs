@@ -4,7 +4,7 @@ use crate::{
     transaction::fees::{transparent, zip317},
 };
 
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 use crate::transaction::fees::tze;
 
 /// A fee rule that always returns a fixed fee, irrespective of the structure of

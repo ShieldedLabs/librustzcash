@@ -239,7 +239,7 @@ impl TxVersion {
         }
     }
 
-    #[cfg(zcash_unstable = "zfuture")]
+    #[cfg(zcash_unstable = "tze")]
     pub fn has_tze(&self) -> bool {
         matches!(self, TxVersion::ZFuture)
     }
