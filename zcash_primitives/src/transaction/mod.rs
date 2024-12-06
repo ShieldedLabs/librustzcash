@@ -423,12 +423,12 @@ impl<A: Authorization> TransactionData<A> {
                 self.consensus_branch_id,
                 self.lock_time,
                 self.expiry_height,
+                #[cfg(zcash_unstable = "nsm")]
+                self.burn_amount.as_ref(),
             ),
             digester.digest_transparent(self.transparent_bundle.as_ref()),
             digester.digest_sapling(self.sapling_bundle.as_ref()),
             digester.digest_orchard(self.orchard_bundle.as_ref()),
-            #[cfg(zcash_unstable = "nsm")]
-            digester.digest_burn_amount(self.burn_amount.as_ref()),
             #[cfg(zcash_unstable = "tze")]
             digester.digest_tze(self.tze_bundle.as_ref()),
         )
@@ -939,8 +939,6 @@ pub struct TxDigests<A> {
     pub transparent_digests: Option<TransparentDigests<A>>,
     pub sapling_digest: Option<A>,
     pub orchard_digest: Option<A>,
-    #[cfg(zcash_unstable = "nsm")]
-    pub burn_amount_digest: Option<A>,
     #[cfg(zcash_unstable = "tze")]
     pub tze_digests: Option<TzeDigests<A>>,
 }
@@ -950,9 +948,6 @@ pub trait TransactionDigest<A: Authorization> {
     type TransparentDigest;
     type SaplingDigest;
     type OrchardDigest;
-
-    #[cfg(zcash_unstable = "nsm")]
-    type BurnAmountDigest;
 
     #[cfg(zcash_unstable = "tze")]
     type TzeDigest;
@@ -965,6 +960,8 @@ pub trait TransactionDigest<A: Authorization> {
         consensus_branch_id: BranchId,
         lock_time: u32,
         expiry_height: BlockHeight,
+        #[cfg(zcash_unstable = "nsm")]
+        burn_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest;
 
     fn digest_transparent(
@@ -982,9 +979,6 @@ pub trait TransactionDigest<A: Authorization> {
         orchard_bundle: Option<&orchard::Bundle<A::OrchardAuth, ZatBalance>>,
     ) -> Self::OrchardDigest;
 
-    #[cfg(zcash_unstable = "nsm")]
-    fn digest_burn_amount(&self, burn_amount: Option<&NonNegativeAmount>) -> Self::BurnAmountDigest;
-
     #[cfg(zcash_unstable = "tze")]
     fn digest_tze(&self, tze_bundle: Option<&tze::Bundle<A::TzeAuth>>) -> Self::TzeDigest;
 
@@ -994,7 +988,6 @@ pub trait TransactionDigest<A: Authorization> {
         transparent_digest: Self::TransparentDigest,
         sapling_digest: Self::SaplingDigest,
         orchard_digest: Self::OrchardDigest,
-        #[cfg(zcash_unstable = "nsm")] burn_amount_digest: Self::BurnAmountDigest,
         #[cfg(zcash_unstable = "tze")] tze_digest: Self::TzeDigest,
     ) -> Self::Digest;
 }
