@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `zcash_client_sqlite/src/wallet/init.rs`."><title>init.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="zcash_client_sqlite" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b8c8287a2 2024-11-03)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">zcash_client_sqlite/wallet/</div>init.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `zcash_client_sqlite/src/wallet/init.rs`."><title>init.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cf3c48c1.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="zcash_client_sqlite" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (f027438f8 2025-02-03)" data-channel="nightly" data-search-js="search-2d513d54.js" data-settings-js="settings-6dad6058.js" ><script src="../../../static.files/storage-302de22f.js"></script><script defer src="../../../static.files/src-script-8fee9dc5.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9b5d7e41.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">zcash_client_sqlite/wallet/</div>init.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -1127,9 +1127,17 @@
 <a href="#1126" id="1126">1126</a>
 <a href="#1127" id="1127">1127</a>
 <a href="#1128" id="1128">1128</a>
-<a href="#1129" id="1129">1129</a></pre></div><pre class="rust"><code><span class="doccomment">//! Functions for initializing the various databases.
+<a href="#1129" id="1129">1129</a>
+<a href="#1130" id="1130">1130</a>
+<a href="#1131" id="1131">1131</a>
+<a href="#1132" id="1132">1132</a>
+<a href="#1133" id="1133">1133</a>
+<a href="#1134" id="1134">1134</a>
+<a href="#1135" id="1135">1135</a>
+<a href="#1136" id="1136">1136</a></pre></div><pre class="rust"><code><span class="doccomment">//! Functions for initializing the various databases.
 
-</span><span class="kw">use </span>std::fmt;
+</span><span class="kw">use </span>std::borrow::BorrowMut;
+<span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::rc::Rc;
 
 <span class="kw">use </span>regex::Regex;
@@ -1139,11 +1147,9 @@
 <span class="kw">use </span>shardtree::error::ShardTreeError;
 <span class="kw">use </span>uuid::Uuid;
 
-<span class="kw">use </span>zcash_client_backend::{
-    data_api::{SeedRelevance, WalletRead},
-    keys::AddressGenerationError,
-};
-<span class="kw">use </span>zcash_primitives::{consensus, transaction::components::amount::BalanceError};
+<span class="kw">use </span>zcash_client_backend::data_api::{SeedRelevance, WalletRead};
+<span class="kw">use </span>zcash_keys::keys::AddressGenerationError;
+<span class="kw">use </span>zcash_protocol::{consensus, value::BalanceError};
 
 <span class="kw">use </span><span class="self">self</span>::migrations::verify_network_compatibility;
 
@@ -1332,8 +1338,7 @@
         | SqliteClientError::NonSequentialBlocks
         | SqliteClientError::RequestedRewindInvalid { .. }
         | SqliteClientError::KeyDerivationError(<span class="kw">_</span>)
-        | SqliteClientError::AccountIdDiscontinuity
-        | SqliteClientError::AccountIdOutOfRange
+        | SqliteClientError::Zip32AccountIndexOutOfRange
         | SqliteClientError::AccountCollision(<span class="kw">_</span>)
         | SqliteClientError::CacheMiss(<span class="kw">_</span>) =&gt; {
             <span class="macro">unreachable!</span>(<span class="string">"we only call WalletRead methods; mutations can't occur"</span>)
@@ -1358,6 +1363,9 @@
         <span class="attr">#[cfg(feature = <span class="string">"transparent-inputs"</span>)]
         </span>SqliteClientError::EphemeralAddressReuse(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; {
             <span class="macro">unreachable!</span>(<span class="string">"we don't do ephemeral address tracking"</span>)
+        }
+        SqliteClientError::NoteFilterInvalid(<span class="kw">_</span>) =&gt; {
+            <span class="macro">unreachable!</span>(<span class="string">"we don't do note selection in migrations"</span>)
         }
     }
 }
@@ -1406,7 +1414,7 @@
 /// # use std::error::Error;
 /// # use secrecy::SecretVec;
 /// # use tempfile::NamedTempFile;
-/// use zcash_primitives::consensus::Network;
+/// use zcash_protocol::consensus::Network;
 /// use zcash_client_sqlite::{
 ///     WalletDb,
 ///     wallet::init::{WalletMigrationError, init_wallet_db},
@@ -1438,22 +1446,25 @@
 // the library that does not support transparent use. It might be a good idea to add an explicit
 // check for unspent transparent outputs whenever running initialization with a version of the
 // library *not* compiled with the `transparent-inputs` feature flag, and fail if any are present.
-</span><span class="kw">pub fn </span>init_wallet_db&lt;P: consensus::Parameters + <span class="lifetime">'static</span>&gt;(
-    wdb: <span class="kw-2">&amp;mut </span>WalletDb&lt;rusqlite::Connection, P&gt;,
+</span><span class="kw">pub fn </span>init_wallet_db&lt;C: BorrowMut&lt;rusqlite::Connection&gt;, P: consensus::Parameters + <span class="lifetime">'static</span>&gt;(
+    wdb: <span class="kw-2">&amp;mut </span>WalletDb&lt;C, P&gt;,
     seed: <span class="prelude-ty">Option</span>&lt;SecretVec&lt;u8&gt;&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), MigratorError&lt;Uuid, WalletMigrationError&gt;&gt; {
     init_wallet_db_internal(wdb, seed, <span class="kw-2">&amp;</span>[], <span class="bool-val">true</span>)
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_wallet_db_internal&lt;P: consensus::Parameters + <span class="lifetime">'static</span>&gt;(
-    wdb: <span class="kw-2">&amp;mut </span>WalletDb&lt;rusqlite::Connection, P&gt;,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_wallet_db_internal&lt;
+    C: BorrowMut&lt;rusqlite::Connection&gt;,
+    P: consensus::Parameters + <span class="lifetime">'static</span>,
+&gt;(
+    wdb: <span class="kw-2">&amp;mut </span>WalletDb&lt;C, P&gt;,
     seed: <span class="prelude-ty">Option</span>&lt;SecretVec&lt;u8&gt;&gt;,
     target_migrations: <span class="kw-2">&amp;</span>[Uuid],
     verify_seed_relevance: bool,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), MigratorError&lt;Uuid, WalletMigrationError&gt;&gt; {
     <span class="kw">let </span>seed = seed.map(Rc::new);
 
-    verify_sqlite_version_compatibility(<span class="kw-2">&amp;</span>wdb.conn).map_err(MigratorError::Adapter)<span class="question-mark">?</span>;
+    verify_sqlite_version_compatibility(wdb.conn.borrow()).map_err(MigratorError::Adapter)<span class="question-mark">?</span>;
 
     <span class="comment">// Turn off foreign key enforcement, to ensure that table replacement does not break foreign
     // key references in table definitions.
@@ -1461,6 +1472,7 @@
     // It is necessary to perform this operation globally using the outer connection because this
     // pragma has no effect when set or unset within a transaction.
     </span>wdb.conn
+        .borrow()
         .execute_batch(<span class="string">"PRAGMA foreign_keys = OFF;"</span>)
         .map_err(|e| MigratorError::Adapter(WalletMigrationError::from(e)))<span class="question-mark">?</span>;
 
@@ -1471,7 +1483,7 @@
     // https://github.com/zcash/schemerz/issues/6)
     </span>{
         <span class="kw">let </span>adapter = RusqliteAdapter::&lt;<span class="lifetime">'_</span>, WalletMigrationError&gt;::new(
-            <span class="kw-2">&amp;mut </span>wdb.conn,
+            wdb.conn.borrow_mut(),
             <span class="prelude-val">Some</span>(MIGRATIONS_TABLE.to_string()),
         );
         adapter.init().expect(<span class="string">"Migrations table setup succeeds."</span>);
@@ -1480,11 +1492,11 @@
     <span class="comment">// Now that we are certain that the migrations table exists, verify that if the database
     // already contains account data, any stored UFVKs correspond to the same network that the
     // migrations are being run for.
-    </span>verify_network_compatibility(<span class="kw-2">&amp;</span>wdb.conn, <span class="kw-2">&amp;</span>wdb.params).map_err(MigratorError::Adapter)<span class="question-mark">?</span>;
+    </span>verify_network_compatibility(wdb.conn.borrow(), <span class="kw-2">&amp;</span>wdb.params).map_err(MigratorError::Adapter)<span class="question-mark">?</span>;
 
     <span class="comment">// Now create the adapter that we're actually going to use to perform the migrations, and
     // proceed.
-    </span><span class="kw">let </span>adapter = RusqliteAdapter::new(<span class="kw-2">&amp;mut </span>wdb.conn, <span class="prelude-val">Some</span>(MIGRATIONS_TABLE.to_string()));
+    </span><span class="kw">let </span>adapter = RusqliteAdapter::new(wdb.conn.borrow_mut(), <span class="prelude-val">Some</span>(MIGRATIONS_TABLE.to_string()));
     <span class="kw">let </span><span class="kw-2">mut </span>migrator = Migrator::new(adapter);
     migrator
         .register_multiple(migrations::all_migrations(<span class="kw-2">&amp;</span>wdb.params, seed.clone()).into_iter())
@@ -1497,6 +1509,7 @@
         }
     }
     wdb.conn
+        .borrow()
         .execute(<span class="string">"PRAGMA foreign_keys = ON"</span>, [])
         .map_err(|e| MigratorError::Adapter(WalletMigrationError::from(e)))<span class="question-mark">?</span>;
 
@@ -1567,19 +1580,19 @@
 
     <span class="kw">use </span>tempfile::NamedTempFile;
 
-    <span class="kw">use </span>zcash_client_backend::{
-        address::Address,
-        data_api::testing::TestBuilder,
-        encoding::{encode_extended_full_viewing_key, encode_payment_address},
-        keys::{sapling, UnifiedAddressRequest, UnifiedFullViewingKey, UnifiedSpendingKey},
-    };
-
     <span class="kw">use </span>::sapling::zip32::ExtendedFullViewingKey;
-    <span class="kw">use </span>zcash_primitives::{
-        consensus::{<span class="self">self</span>, BlockHeight, BranchId, Network, NetworkConstants},
-        transaction::{TransactionData, TxVersion},
-        zip32::AccountId,
+    <span class="kw">use </span>zcash_client_backend::data_api::testing::TestBuilder;
+    <span class="kw">use </span>zcash_keys::{
+        address::Address,
+        encoding::{encode_extended_full_viewing_key, encode_payment_address},
+        keys::{
+            sapling, ReceiverRequirement::<span class="kw-2">*</span>, UnifiedAddressRequest, UnifiedFullViewingKey,
+            UnifiedSpendingKey,
+        },
     };
+    <span class="kw">use </span>zcash_primitives::transaction::{TransactionData, TxVersion};
+    <span class="kw">use </span>zcash_protocol::consensus::{<span class="self">self</span>, BlockHeight, BranchId, Network, NetworkConstants};
+    <span class="kw">use </span>zip32::AccountId;
 
     <span class="kw">use crate</span>::{testing::db::TestDbFactory, wallet::db, WalletDb, UA_TRANSPARENT};
 
@@ -1591,7 +1604,7 @@
         <span class="kw">crate</span>::wallet::{<span class="self">self</span>, pool_code, PoolType},
         zcash_address::test_vectors,
         zcash_client_backend::data_api::WalletWrite,
-        zcash_primitives::zip32::DiversifierIndex,
+        zip32::DiversifierIndex,
     };
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>describe_tables(conn: <span class="kw-2">&amp;</span>Connection) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;, rusqlite::Error&gt; {
@@ -1655,6 +1668,7 @@
         <span class="kw">let </span>expected_indices = <span class="macro">vec!</span>[
             db::INDEX_ACCOUNTS_UFVK,
             db::INDEX_ACCOUNTS_UIVK,
+            db::INDEX_ACCOUNTS_UUID,
             db::INDEX_HD_ACCOUNT,
             db::INDEX_ADDRESSES_ACCOUNTS,
             db::INDEX_NF_MAP_LOCATOR_IDX,
@@ -2115,9 +2129,9 @@
 
             <span class="comment">// Unified addresses at the time of the addition of migrations did not contain an
             // Orchard component.
-            </span><span class="kw">let </span>ua_request = UnifiedAddressRequest::unsafe_new(<span class="bool-val">false</span>, <span class="bool-val">true</span>, UA_TRANSPARENT);
+            </span><span class="kw">let </span>ua_request = UnifiedAddressRequest::unsafe_new(Omit, Require, UA_TRANSPARENT);
             <span class="kw">let </span>address_str = Address::Unified(
-                ufvk.default_address(ua_request)
+                ufvk.default_address(<span class="prelude-val">Some</span>(ua_request))
                     .expect(<span class="string">"A valid default address exists for the UFVK"</span>)
                     .<span class="number">0</span>,
             )
@@ -2137,7 +2151,7 @@
             </span>{
                 <span class="kw">let </span>taddr = Address::Transparent(
                     <span class="kw-2">*</span>ufvk
-                        .default_address(ua_request)
+                        .default_address(<span class="prelude-val">Some</span>(ua_request))
                         .expect(<span class="string">"A valid default address exists for the UFVK"</span>)
                         .<span class="number">0
                         </span>.transparent()
@@ -2205,13 +2219,13 @@
 
         <span class="kw">let </span>birthday = AccountBirthday::from_sapling_activation(<span class="kw-2">&amp;</span>network, BlockHash([<span class="number">0</span>; <span class="number">32</span>]));
         <span class="kw">let </span>(account_id, _usk) = db_data
-            .create_account(<span class="kw-2">&amp;</span>Secret::new(seed.to_vec()), <span class="kw-2">&amp;</span>birthday)
+            .create_account(<span class="string">""</span>, <span class="kw-2">&amp;</span>Secret::new(seed.to_vec()), <span class="kw-2">&amp;</span>birthday, <span class="prelude-val">None</span>)
             .unwrap();
         <span class="macro">assert_matches!</span>(
             db_data.get_account(account_id),
             <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(account)) <span class="kw">if </span><span class="macro">matches!</span>(
-                account.kind,
-                AccountSource::Derived{account_index, ..} <span class="kw">if </span>account_index == zip32::AccountId::ZERO,
+                <span class="kw-2">&amp;</span>account.kind,
+                AccountSource::Derived{derivation, ..} <span class="kw">if </span>derivation.account_index() == zip32::AccountId::ZERO,
             )
         );
 
@@ -2242,9 +2256,9 @@
                 </span><span class="macro">assert_eq!</span>(tv.unified_addr, ua.encode(<span class="kw-2">&amp;</span>Network::MainNetwork));
 
                 <span class="comment">// hardcoded with knowledge of what's coming next
-                </span><span class="kw">let </span>ua_request = UnifiedAddressRequest::unsafe_new(<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>);
+                </span><span class="kw">let </span>ua_request = UnifiedAddressRequest::unsafe_new(Omit, Require, Require);
                 db_data
-                    .get_next_available_address(account_id, ua_request)
+                    .get_next_available_address(account_id, <span class="prelude-val">Some</span>(ua_request))
                     .unwrap()
                     .expect(<span class="string">"get_next_available_address generated an address"</span>);
             } <span class="kw">else </span>{
