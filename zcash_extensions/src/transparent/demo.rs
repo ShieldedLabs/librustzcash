@@ -671,7 +671,7 @@ mod tests {
             precondition: tze::Precondition::from(0, &Precondition::open(hash_1)),
         };
 
-        let tx_a = TransactionData::from_parts(
+        let tx_a = TransactionData::from_parts_zfuture(
             TxVersion::ZFuture,
             BranchId::ZFuture,
             0,
@@ -704,7 +704,7 @@ mod tests {
             precondition: tze::Precondition::from(0, &Precondition::close(hash_2)),
         };
 
-        let tx_b = TransactionData::from_parts(
+        let tx_b = TransactionData::from_parts_zfuture(
             TxVersion::ZFuture,
             BranchId::ZFuture,
             0,
@@ -733,7 +733,7 @@ mod tests {
             witness: tze::Witness::from(0, &Witness::close(preimage_2)),
         };
 
-        let tx_c = TransactionData::from_parts(
+        let tx_c = TransactionData::from_parts_zfuture(
             TxVersion::ZFuture,
             BranchId::ZFuture,
             0,
@@ -741,6 +741,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            #[cfg(zcash_unstable = "nsm")]
             None,
             Some(Bundle {
                 vin: vec![in_c],

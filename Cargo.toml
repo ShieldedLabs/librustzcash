@@ -191,7 +191,7 @@ opt-level = 3
 debug = true
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zcash_unstable, values("zfuture", "nsm"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zcash_unstable, values("zfuture", "nsm", "tze"))'] }
 
 [patch.crates-io]
 orchard = { git = "https://github.com/zcash/orchard.git", rev = "c684e9185a0449efb00428f807d3bf286b5dae03" }

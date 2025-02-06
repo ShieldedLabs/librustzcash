@@ -35,9 +35,6 @@ use {
     alloc::vec::Vec,
 };
 
-#[cfg(zcash_unstable = "nsm")]
-use zcash_protocol::value::ZatBalance;
-
 #[cfg(feature = "transparent-inputs")]
 use ::transparent::builder::TransparentInputInfo;
 
@@ -312,7 +309,7 @@ pub struct Builder<'a, P, U: sapling::builder::ProverProgress> {
     sapling_builder: Option<sapling::builder::Builder>,
     orchard_builder: Option<orchard::builder::Builder>,
     #[cfg(zcash_unstable = "nsm")]
-    burn_amount: Option<NonNegativeAmount>,
+    burn_amount: Option<Zatoshis>,
     #[cfg(zcash_unstable = "zfuture")]
     tze_builder: TzeBuilder<'a, TransactionData<Unauthorized>>,
     #[cfg(not(zcash_unstable = "zfuture"))]
@@ -657,7 +654,7 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
     }
 
     #[cfg(zcash_unstable = "nsm")]
-    pub fn set_burn_amount(&mut self, burn_amount: Option<NonNegativeAmount>) {
+    pub fn set_burn_amount(&mut self, burn_amount: Option<Zatoshis>) {
         self.burn_amount = burn_amount;
     }
 
@@ -1309,12 +1306,12 @@ mod tests {
                 orchard_anchor: Some(orchard::Anchor::empty_tree()),
             };
             let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
-            builder.set_burn_amount(Some(NonNegativeAmount::const_from_u64(50000)));
+            builder.set_burn_amount(Some(Zatoshis::const_from_u64(50000)));
 
             assert_matches!(
-                builder.mock_build(OsRng),
+                builder.mock_build(&TransparentSigningSet::new(), extsks, &[], OsRng),
                 Err(Error::InsufficientFunds(expected)) if expected ==
-                    (NonNegativeAmount::const_from_u64(50000) + MINIMUM_FEE).unwrap().into()
+                    (Zatoshis::const_from_u64(50000) + MINIMUM_FEE).unwrap().into()
             );
         }
 
@@ -1371,26 +1368,26 @@ mod tests {
             };
             let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
             builder
-                .add_sapling_spend::<Infallible>(&extsk, note1.clone(), witness1.path().unwrap())
+                .add_sapling_spend::<Infallible>(dfvk.fvk().clone(), note1.clone(), witness1.path().unwrap())
                 .unwrap();
             builder
                 .add_sapling_output::<Infallible>(
                     ovk,
                     to,
-                    NonNegativeAmount::const_from_u64(30000),
+                    Zatoshis::const_from_u64(30000),
                     MemoBytes::empty(),
                 )
                 .unwrap();
             builder
                 .add_transparent_output(
                     &TransparentAddress::PublicKeyHash([0; 20]),
-                    NonNegativeAmount::const_from_u64(5000),
+                    Zatoshis::const_from_u64(5000),
                 )
                 .unwrap();
-            builder.set_burn_amount(Some(NonNegativeAmount::const_from_u64(10000)));
+            builder.set_burn_amount(Some(Zatoshis::const_from_u64(10000)));
             assert_matches!(
-                builder.mock_build(OsRng),
-                Err(Error::InsufficientFunds(expected)) if expected == Amount::const_from_i64(1)
+                builder.mock_build(&TransparentSigningSet::new(), extsks, &[], OsRng),
+                Err(Error::InsufficientFunds(expected)) if expected == Zatoshis::const_from_u64(1).into()
             );
         }
 
@@ -1414,14 +1411,14 @@ mod tests {
             builder
                 .add_sapling_spend::<Infallible>(
                     dfvk.fvk().clone(),
-                    note1,
+                    note1.clone(),
                     witness1.path().unwrap(),
                 )
                 .unwrap();
             builder
                 .add_sapling_spend::<Infallible>(
                     dfvk.fvk().clone(),
-                    note2,
+                    note2.clone(),
                     witness2.path().unwrap(),
                 )
                 .unwrap();
@@ -1460,32 +1457,32 @@ mod tests {
             };
             let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
             builder
-                .add_sapling_spend::<Infallible>(&extsk, note1, witness1.path().unwrap())
+                .add_sapling_spend::<Infallible>(dfvk.fvk().clone(), note1, witness1.path().unwrap())
                 .unwrap();
             builder
-                .add_sapling_spend::<Infallible>(&extsk, note2, witness2.path().unwrap())
+                .add_sapling_spend::<Infallible>(dfvk.fvk().clone(), note2, witness2.path().unwrap())
                 .unwrap();
             builder
                 .add_sapling_output::<Infallible>(
                     ovk,
                     to,
-                    NonNegativeAmount::const_from_u64(30000),
+                    Zatoshis::const_from_u64(30000),
                     MemoBytes::empty(),
                 )
                 .unwrap();
             builder
                 .add_transparent_output(
                     &TransparentAddress::PublicKeyHash([0; 20]),
-                    NonNegativeAmount::const_from_u64(5000),
+                    Zatoshis::const_from_u64(5000),
                 )
                 .unwrap();
-            builder.set_burn_amount(Some(NonNegativeAmount::const_from_u64(10000)));
-            let res = builder.mock_build(OsRng).unwrap();
+            builder.set_burn_amount(Some(Zatoshis::const_from_u64(10000)));
+            let res = builder.mock_build(&TransparentSigningSet::new(), extsks, &[], OsRng).unwrap();
             assert_eq!(
                 res.transaction()
                     .fee_paid(|_| Err(BalanceError::Overflow))
                     .unwrap(),
-                Amount::const_from_i64(15_000)
+                Zatoshis::const_from_u64(15_000).into()
             );
         }
     }

@@ -9,6 +9,8 @@ use ::transparent::{
 };
 use zcash_protocol::{consensus::BranchId, value::Zatoshis};
 
+use crate::transaction::TxVersion;
+
 use super::{
     sighash::SignableInput,
     sighash_v4::v4_signature_hash,
@@ -56,6 +58,9 @@ fn check_roundtrip(tx: Transaction) -> Result<(), TestCaseError> {
         tx.orchard_bundle.as_ref().map(|v| *v.value_balance()),
         txo.orchard_bundle.as_ref().map(|v| *v.value_balance())
     );
+    if tx.version == TxVersion::ZFuture {
+        prop_assert_eq!(tx.burn_amount, txo.burn_amount);
+    }
     Ok(())
 }
 
@@ -116,6 +121,14 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn tx_serialization_roundtrip_nu5(tx in arb_tx(BranchId::Nu5)) {
+        check_roundtrip(tx)?;
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
+    #[test]
+    fn tx_serialization_roundtrip_nu7(tx in arb_tx(BranchId::ZFuture)) {
         check_roundtrip(tx)?;
     }
 }

@@ -10,7 +10,7 @@ use ::orchard::bundle::{self as orchard};
 use ::transparent::bundle::{self as transparent, TxIn, TxOut};
 use zcash_protocol::{
     consensus::{BlockHeight, BranchId},
-    value::ZatBalance,
+    value::{ZatBalance, Zatoshis},
 };
 
 use ::sapling::bundle::{OutputDescription, SpendDescription};
@@ -18,9 +18,6 @@ use ::sapling::bundle::{OutputDescription, SpendDescription};
 use super::{
     Authorization, Authorized, TransactionDigest, TransparentDigests, TxDigests, TxId, TxVersion,
 };
-
-#[cfg(zcash_unstable = "nsm")]
-use super::components::amount::NonNegativeAmount;
 
 #[cfg(zcash_unstable = "tze")]
 use super::{
@@ -227,7 +224,7 @@ fn hash_header_txid_data(
     lock_time: u32,
     expiry_height: BlockHeight,
     #[cfg(zcash_unstable = "nsm")]
-    burn_amount: Option<&NonNegativeAmount>,
+    burn_amount: Option<&Zatoshis>,
 ) -> Blake2bHash {
     let mut h = hasher(ZCASH_HEADERS_HASH_PERSONALIZATION);
 
@@ -239,7 +236,7 @@ fn hash_header_txid_data(
 
     #[cfg(zcash_unstable = "nsm")]
     if let Some(&burn_amount) = burn_amount {
-        h.write_u64::<LittleEndian>(burn_amount.into()).unwrap();
+        h.write_u64_le(burn_amount.into()).unwrap();
     }
 
     h.finalize()
@@ -318,7 +315,7 @@ impl<A: Authorization> TransactionDigest<A> for TxIdDigester {
         lock_time: u32,
         expiry_height: BlockHeight,
         #[cfg(zcash_unstable = "nsm")]
-        burn_amount: Option<&NonNegativeAmount>,
+        burn_amount: Option<&Zatoshis>,
     ) -> Self::HeaderDigest {
         hash_header_txid_data(
             version,
@@ -460,7 +457,7 @@ impl TransactionDigest<Authorized> for BlockTxCommitmentDigester {
         _lock_time: u32,
         _expiry_height: BlockHeight,
         #[cfg(zcash_unstable = "nsm")]
-        _burn_amount: Option<&NonNegativeAmount>,
+        _burn_amount: Option<&Zatoshis>,
     ) -> Self::HeaderDigest {
         consensus_branch_id
     }
