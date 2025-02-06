@@ -606,7 +606,7 @@ impl Transaction {
             }
             TxVersion::Zip225 => Self::read_v5(&mut reader.into_base_reader(), version),
             #[cfg(zcash_unstable = "zfuture")]
-            TxVersion::ZFuture => Self::read_v5(&mut reader.into_base_reader(), version),
+            TxVersion::ZFuture => Self::read_v6(&mut reader.into_base_reader(), version),
         }
     }
 
@@ -720,6 +720,37 @@ impl Transaction {
         let orchard_bundle = orchard_serialization::read_v5_bundle(&mut reader)?;
 
         #[cfg(zcash_unstable = "nsm")]
+        let burn_amount = None;
+
+        #[cfg(zcash_unstable = "tze")]
+        let tze_bundle = Self::read_tze(&mut reader)?;
+
+        let data = TransactionData {
+            version,
+            consensus_branch_id,
+            lock_time,
+            expiry_height,
+            transparent_bundle,
+            sprout_bundle: None,
+            sapling_bundle,
+            orchard_bundle,
+            #[cfg(zcash_unstable = "nsm")]
+            burn_amount,
+            #[cfg(zcash_unstable = "tze")]
+            tze_bundle,
+        };
+
+        Ok(Self::from_data_v5(data))
+    }
+
+    fn read_v6<R: Read>(mut reader: R, version: TxVersion) -> io::Result<Self> {
+        let (consensus_branch_id, lock_time, expiry_height) =
+            Self::read_v5_header_fragment(&mut reader)?;
+        let transparent_bundle = Self::read_transparent(&mut reader)?;
+        let sapling_bundle = sapling_serialization::read_v5_bundle(&mut reader)?;
+        let orchard_bundle = orchard_serialization::read_v5_bundle(&mut reader)?;
+
+        #[cfg(zcash_unstable = "nsm")]
         let burn_amount = if version == TxVersion::ZFuture {
             Some(Self::read_burn_amount(&mut reader)?)
         } else {
@@ -797,7 +828,7 @@ impl Transaction {
             }
             TxVersion::Zip225 => self.write_v5(writer),
             #[cfg(zcash_unstable = "zfuture")]
-            TxVersion::ZFuture => self.write_v5(writer),
+            TxVersion::ZFuture => self.write_v6(writer),
         }
     }
 
@@ -855,6 +886,23 @@ impl Transaction {
     }
 
     pub fn write_v5<W: Write>(&self, mut writer: W) -> io::Result<()> {
+        if self.sprout_bundle.is_some() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Sprout components cannot be present when serializing to the V5 transaction format.",
+            ));
+        }
+        self.write_v5_header(&mut writer)?;
+        self.write_transparent(&mut writer)?;
+        self.write_v5_sapling(&mut writer)?;
+        orchard_serialization::write_v5_bundle(self.orchard_bundle.as_ref(), &mut writer)?;
+
+        #[cfg(zcash_unstable = "tze")]
+        self.write_tze(&mut writer)?;
+        Ok(())
+    }
+
+    pub fn write_v6<W: Write>(&self, mut writer: W) -> io::Result<()> {
         if self.sprout_bundle.is_some() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,

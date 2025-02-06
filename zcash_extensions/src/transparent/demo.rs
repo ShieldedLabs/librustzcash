@@ -743,6 +743,8 @@ mod tests {
             None,
             None,
             None,
+            #[cfg(zcash_unstable = "nsm")]
+            None,
             Some(Bundle {
                 vin: vec![in_c],
                 vout: vec![],
