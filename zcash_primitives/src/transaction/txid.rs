@@ -231,7 +231,7 @@ fn hash_header_txid_data(
     lock_time: u32,
     expiry_height: BlockHeight,
     #[cfg(zcash_unstable = "nsm")]
-    burn_amount: Option<&NonNegativeAmount>,
+    zip233_amount: Option<&NonNegativeAmount>,
 ) -> Blake2bHash {
     let mut h = hasher(ZCASH_HEADERS_HASH_PERSONALIZATION);
 
@@ -244,8 +244,8 @@ fn hash_header_txid_data(
     h.write_u32::<LittleEndian>(expiry_height.into()).unwrap();
 
     #[cfg(zcash_unstable = "nsm")]
-    if let Some(&burn_amount) = burn_amount {
-        h.write_u64::<LittleEndian>(burn_amount.into()).unwrap();
+    if let Some(&zip233_amount) = zip233_amount {
+        h.write_u64::<LittleEndian>(zip233_amount.into()).unwrap();
     }
 
     h.finalize()
@@ -324,7 +324,7 @@ impl<A: Authorization> TransactionDigest<A> for TxIdDigester {
         lock_time: u32,
         expiry_height: BlockHeight,
         #[cfg(zcash_unstable = "nsm")]
-        burn_amount: Option<&NonNegativeAmount>,
+        zip233_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest {
         hash_header_txid_data(
             version,
@@ -332,7 +332,7 @@ impl<A: Authorization> TransactionDigest<A> for TxIdDigester {
             lock_time,
             expiry_height,
             #[cfg(zcash_unstable = "nsm")]
-            burn_amount
+            zip233_amount
         )
     }
 
@@ -466,7 +466,7 @@ impl TransactionDigest<Authorized> for BlockTxCommitmentDigester {
         _lock_time: u32,
         _expiry_height: BlockHeight,
         #[cfg(zcash_unstable = "nsm")]
-        _burn_amount: Option<&NonNegativeAmount>,
+        _zip233_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest {
         consensus_branch_id
     }

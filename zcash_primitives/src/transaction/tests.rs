@@ -56,7 +56,7 @@ fn check_roundtrip(tx: Transaction) -> Result<(), TestCaseError> {
         txo.orchard_bundle.as_ref().map(|v| *v.value_balance())
     );
     if tx.version == TxVersion::ZFuture {
-        prop_assert_eq!(tx.burn_amount, txo.burn_amount);
+        prop_assert_eq!(tx.zip233_amount, txo.zip233_amount);
     }
     Ok(())
 }
@@ -273,7 +273,7 @@ fn zip_0244() {
             txdata.sapling_bundle().cloned(),
             txdata.orchard_bundle().cloned(),
             #[cfg(zcash_unstable = "nsm")]
-            txdata.burn_amount,
+            txdata.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             txdata.tze_bundle().cloned(),
         );
@@ -415,7 +415,7 @@ fn zip_nsm() {
             txdata.sprout_bundle().cloned(),
             txdata.sapling_bundle().cloned(),
             txdata.orchard_bundle().cloned(),
-            txdata.burn_amount,
+            txdata.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             None,
         );

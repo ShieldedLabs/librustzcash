@@ -7382,7 +7382,7 @@ pub mod zip_nsm {
         pub txid: [u8; 32],
         pub auth_digest: [u8; 32],
         pub amounts: Vec<i64>,
-        pub burn_amount: u64,
+        pub zip233_amount: u64,
         pub script_pubkeys: Vec<Vec<u8>>,
         pub transparent_input: Option<u32>,
         pub sighash_shielded: [u8; 32],
@@ -7633,7 +7633,7 @@ pub mod zip_nsm {
                     0x48, 0xd4, 0xa8, 0x65, 0xab, 0xe3,
                 ],
                 amounts: vec![2002665803571713, 531521585593360, 1483825548543377],
-                burn_amount: 509013269549655,
+                zip233_amount: 509013269549655,
                 script_pubkeys: vec![
                     vec![0xac, 0x51, 0xac, 0x51, 0x53, 0x63],
                     vec![0x51, 0x51, 0x00],
@@ -7917,7 +7917,7 @@ pub mod zip_nsm {
                     0x94, 0x70, 0xb8, 0x83, 0xcc, 0xb9,
                 ],
                 amounts: vec![803018142857488, 559207292003968, 576242288915192],
-                burn_amount: 26404918436030,
+                zip233_amount: 26404918436030,
                 script_pubkeys: vec![
                     vec![0x51, 0x52, 0xac, 0x52, 0x6a, 0x53],
                     vec![0x63, 0x51, 0x53],
@@ -8274,7 +8274,7 @@ pub mod zip_nsm {
                     0x77, 0x22, 0x81, 0xf6, 0x79, 0x29,
                 ],
                 amounts: vec![792085059419188],
-                burn_amount: 168767276226802,
+                zip233_amount: 168767276226802,
                 script_pubkeys: vec![vec![0x51, 0xac, 0x51, 0x53, 0xac, 0x65, 0x00, 0x63, 0x6a]],
                 transparent_input: Some(0),
                 sighash_shielded: [
@@ -8330,7 +8330,7 @@ pub mod zip_nsm {
                     0xe9, 0xc0, 0xb3, 0xf7, 0xd2, 0xe3,
                 ],
                 amounts: vec![2098065188448400, 1091591811102429],
-                burn_amount: 1420271165868719,
+                zip233_amount: 1420271165868719,
                 script_pubkeys: vec![
                     vec![0x65, 0x63, 0x51, 0x65, 0x52, 0x52, 0x52],
                     vec![0xac, 0x51, 0x53, 0x6a, 0x63, 0x65, 0x65, 0x52, 0x00],
@@ -8672,7 +8672,7 @@ pub mod zip_nsm {
                     0x99, 0xf1, 0x42, 0x9e, 0x9c, 0xca,
                 ],
                 amounts: vec![1884422654635218, 741515226932432, 1268517997797946],
-                burn_amount: 1890257630702249,
+                zip233_amount: 1890257630702249,
                 script_pubkeys: vec![
                     vec![0x52, 0x51, 0x52, 0x63, 0x63, 0x51],
                     vec![0x52, 0x52, 0x52, 0x52, 0x52, 0xac],
@@ -8728,7 +8728,7 @@ pub mod zip_nsm {
                     0xe6, 0xfb, 0x65, 0xee, 0xb9, 0x11,
                 ],
                 amounts: vec![],
-                burn_amount: 1429849067040605,
+                zip233_amount: 1429849067040605,
                 script_pubkeys: vec![],
                 transparent_input: None,
                 sighash_shielded: [
@@ -8857,7 +8857,7 @@ pub mod zip_nsm {
                     0x07, 0x61, 0x54, 0x2a, 0xa4, 0x7e,
                 ],
                 amounts: vec![],
-                burn_amount: 248341168750002,
+                zip233_amount: 248341168750002,
                 script_pubkeys: vec![],
                 transparent_input: None,
                 sighash_shielded: [
@@ -9187,7 +9187,7 @@ pub mod zip_nsm {
                     0xe7, 0x75, 0x33, 0xa7, 0xd4, 0x39,
                 ],
                 amounts: vec![592562446369051, 1540420019883117, 1694211479886907],
-                burn_amount: 161983926007780,
+                zip233_amount: 161983926007780,
                 script_pubkeys: vec![
                     vec![0x51, 0x53, 0x53, 0x51, 0xac],
                     vec![0xac, 0x53, 0x52, 0x53, 0x52, 0x63],
@@ -9411,7 +9411,7 @@ pub mod zip_nsm {
                     0x02, 0xc3, 0xae, 0x1d, 0x7b, 0xea,
                 ],
                 amounts: vec![1681482385057857, 1329715149379892, 1641775598464284],
-                burn_amount: 1546883852426066,
+                zip233_amount: 1546883852426066,
                 script_pubkeys: vec![
                     vec![0x51, 0x6a, 0xac, 0xac, 0x51, 0x63],
                     vec![],
@@ -9556,7 +9556,7 @@ pub mod zip_nsm {
                     0x89, 0xf4, 0xac, 0x61, 0x1a, 0x79,
                 ],
                 amounts: vec![],
-                burn_amount: 858206728993610,
+                zip233_amount: 858206728993610,
                 script_pubkeys: vec![],
                 transparent_input: None,
                 sighash_shielded: [
