@@ -125,7 +125,7 @@ proptest! {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
-    fn tx_serialization_roundtrip_nu6(tx in arb_tx(BranchId::ZFuture)) {
+    fn tx_serialization_roundtrip_nu7(tx in arb_tx(BranchId::ZFuture)) {
         check_roundtrip(tx)?;
     }
 }
