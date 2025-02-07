@@ -265,6 +265,7 @@ impl TxVersion {
             }
             BranchId::Nu5 => TxVersion::Zip225,
             BranchId::Nu6 => TxVersion::Zip225,
+            BranchId::Nu7 => TxVersion::Zip230,
             #[cfg(zcash_unstable = "zfuture")]
             BranchId::ZFuture => TxVersion::ZFuture,
         }
@@ -764,7 +765,7 @@ impl Transaction {
         let orchard_bundle = orchard_serialization::read_v5_bundle(&mut reader)?;
 
         #[cfg(zcash_unstable = "nsm")]
-        let zip233_amount = if version == TxVersion::ZFuture {
+        let zip233_amount = if version == TxVersion::Zip230 {
             Some(Self::read_zip233_amount(&mut reader)?)
         } else {
             None
@@ -1087,6 +1088,7 @@ pub mod testing {
             }
             BranchId::Nu5 => Just(TxVersion::Zip225).boxed(),
             BranchId::Nu6 => Just(TxVersion::Zip225).boxed(),
+            BranchId::Nu7 => Just(TxVersion::Zip230).boxed(),
             #[cfg(zcash_unstable = "zfuture")]
             BranchId::ZFuture => Just(TxVersion::ZFuture).boxed(),
         }

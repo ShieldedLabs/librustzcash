@@ -343,6 +343,7 @@ impl Parameters for MainNetwork {
             NetworkUpgrade::Canopy => Some(BlockHeight(1_046_400)),
             NetworkUpgrade::Nu5 => Some(BlockHeight(1_687_104)),
             NetworkUpgrade::Nu6 => Some(BlockHeight(2_726_400)),
+            NetworkUpgrade::Nu7 => None,
             #[cfg(zcash_unstable = "zfuture")]
             NetworkUpgrade::ZFuture => None,
         }
@@ -372,6 +373,7 @@ impl Parameters for TestNetwork {
             NetworkUpgrade::Canopy => Some(BlockHeight(1_028_500)),
             NetworkUpgrade::Nu5 => Some(BlockHeight(1_842_420)),
             NetworkUpgrade::Nu6 => Some(BlockHeight(2_976_000)),
+            NetworkUpgrade::Nu7 => None,
             #[cfg(zcash_unstable = "zfuture")]
             NetworkUpgrade::ZFuture => None,
         }
@@ -439,6 +441,10 @@ pub enum NetworkUpgrade {
     ///
     /// [Nu6]: https://z.cash/upgrade/nu6/
     Nu6,
+    /// The [Nu7] network upgrade.
+    ///
+    /// [Nu7]: https://z.cash/upgrade/nu6/
+    Nu7,
     /// The ZFUTURE network upgrade.
     ///
     /// This upgrade is expected never to activate on mainnet;
@@ -460,6 +466,7 @@ impl fmt::Display for NetworkUpgrade {
             NetworkUpgrade::Canopy => write!(f, "Canopy"),
             NetworkUpgrade::Nu5 => write!(f, "Nu5"),
             NetworkUpgrade::Nu6 => write!(f, "Nu6"),
+            NetworkUpgrade::Nu7 => write!(f, "Nu7"),
             #[cfg(zcash_unstable = "zfuture")]
             NetworkUpgrade::ZFuture => write!(f, "ZFUTURE"),
         }
@@ -476,6 +483,7 @@ impl NetworkUpgrade {
             NetworkUpgrade::Canopy => BranchId::Canopy,
             NetworkUpgrade::Nu5 => BranchId::Nu5,
             NetworkUpgrade::Nu6 => BranchId::Nu6,
+            NetworkUpgrade::Nu7 => BranchId::Nu7,
             #[cfg(zcash_unstable = "zfuture")]
             NetworkUpgrade::ZFuture => BranchId::ZFuture,
         }
@@ -494,6 +502,7 @@ const UPGRADES_IN_ORDER: &[NetworkUpgrade] = &[
     NetworkUpgrade::Canopy,
     NetworkUpgrade::Nu5,
     NetworkUpgrade::Nu6,
+    NetworkUpgrade::Nu7,
     #[cfg(zcash_unstable = "zfuture")]
     NetworkUpgrade::ZFuture,
 ];
@@ -534,6 +543,8 @@ pub enum BranchId {
     Nu5,
     /// The consensus rules deployed by [`NetworkUpgrade::Nu6`].
     Nu6,
+    /// The consensus rules deployed by [`NetworkUpgrade::Nu7`].
+    Nu7,
     /// Candidates for future consensus rules; this branch will never
     /// activate on mainnet.
     #[cfg(zcash_unstable = "zfuture")]
@@ -555,6 +566,7 @@ impl TryFrom<u32> for BranchId {
             0xe9ff_75a6 => Ok(BranchId::Canopy),
             0xc2d6_d0b4 => Ok(BranchId::Nu5),
             0xc8e7_1055 => Ok(BranchId::Nu6),
+            0xffff_ffff => Ok(BranchId::Nu7),
             #[cfg(zcash_unstable = "zfuture")]
             0xffff_ffff => Ok(BranchId::ZFuture),
             _ => Err("Unknown consensus branch ID"),
@@ -573,6 +585,7 @@ impl From<BranchId> for u32 {
             BranchId::Canopy => 0xe9ff_75a6,
             BranchId::Nu5 => 0xc2d6_d0b4,
             BranchId::Nu6 => 0xc8e7_1055,
+            BranchId::Nu7 => 0xffff_ffff,
             #[cfg(zcash_unstable = "zfuture")]
             BranchId::ZFuture => 0xffff_ffff,
         }
@@ -641,7 +654,10 @@ impl BranchId {
             BranchId::Nu5 => params
                 .activation_height(NetworkUpgrade::Nu5)
                 .map(|lower| (lower, params.activation_height(NetworkUpgrade::Nu6))),
-            BranchId::Nu6 => params.activation_height(NetworkUpgrade::Nu6).map(|lower| {
+            BranchId::Nu6 => params
+                .activation_height(NetworkUpgrade::Nu6)
+                .map(|lower| (lower, params.activation_height(NetworkUpgrade::Nu7))),
+            BranchId::Nu7 => params.activation_height(NetworkUpgrade::Nu7).map(|lower| {
                 #[cfg(zcash_unstable = "zfuture")]
                 let upper = params.activation_height(NetworkUpgrade::ZFuture);
                 #[cfg(not(zcash_unstable = "zfuture"))]
@@ -677,6 +693,7 @@ pub mod testing {
             BranchId::Canopy,
             BranchId::Nu5,
             BranchId::Nu6,
+            BranchId::Nu7,
             #[cfg(zcash_unstable = "zfuture")]
             BranchId::ZFuture,
         ])
