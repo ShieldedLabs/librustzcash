@@ -38,7 +38,6 @@ use self::{
     util::sha256d::{HashReader, HashWriter},
 };
 
-#[cfg(zcash_unstable = "nsm")]
 use {components::amount::NonNegativeAmount, zcash_protocol::value::ZatBalance};
 
 #[cfg(zcash_unstable = "tze")]
@@ -157,10 +156,11 @@ impl TxVersion {
                 (V6_TX_VERSION, V6_VERSION_GROUP_ID) => Ok(TxVersion::Zip230),
                 #[cfg(zcash_unstable = "zfuture")]
                 (ZFUTURE_TX_VERSION, ZFUTURE_VERSION_GROUP_ID) => Ok(TxVersion::ZFuture),
-                _ => Err(io::Error::new(
+                _ => {
+                    Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     "Unknown transaction format",
-                )),
+                ))},
             }
         } else if version >= 1 {
             Ok(TxVersion::Sprout(version))
@@ -344,7 +344,6 @@ pub struct TransactionData<A: Authorization> {
     sprout_bundle: Option<sprout::Bundle>,
     sapling_bundle: Option<sapling::Bundle<A::SaplingAuth, Amount>>,
     orchard_bundle: Option<orchard::bundle::Bundle<A::OrchardAuth, Amount>>,
-    #[cfg(zcash_unstable = "nsm")]
     zip233_amount: Option<NonNegativeAmount>,
     #[cfg(zcash_unstable = "tze")]
     tze_bundle: Option<tze::Bundle<A::TzeAuth>>,
@@ -362,7 +361,7 @@ impl<A: Authorization> TransactionData<A> {
         sprout_bundle: Option<sprout::Bundle>,
         sapling_bundle: Option<sapling::Bundle<A::SaplingAuth, Amount>>,
         orchard_bundle: Option<orchard::Bundle<A::OrchardAuth, Amount>>,
-        #[cfg(zcash_unstable = "nsm")] zip233_amount: Option<NonNegativeAmount>,
+        zip233_amount: Option<NonNegativeAmount>,
         #[cfg(zcash_unstable = "tze")] tze_bundle: Option<tze::Bundle<A::TzeAuth>>,
     ) -> Self {
         TransactionData {
@@ -374,7 +373,6 @@ impl<A: Authorization> TransactionData<A> {
             sprout_bundle,
             sapling_bundle,
             orchard_bundle,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle,
@@ -415,7 +413,6 @@ impl<A: Authorization> TransactionData<A> {
         self.orchard_bundle.as_ref()
     }
 
-    #[cfg(zcash_unstable = "nsm")]
     pub fn zip233_amount(&self) -> Option<NonNegativeAmount> {
         self.zip233_amount
     }
@@ -447,7 +444,6 @@ impl<A: Authorization> TransactionData<A> {
             self.orchard_bundle
                 .as_ref()
                 .map_or_else(Amount::zero, |b| *b.value_balance()),
-            #[cfg(zcash_unstable = "nsm")]
             -self
                 .zip233_amount
                 .map(Into::into)
@@ -467,7 +463,6 @@ impl<A: Authorization> TransactionData<A> {
                 self.consensus_branch_id,
                 self.lock_time,
                 self.expiry_height,
-                #[cfg(zcash_unstable = "nsm")]
                 self.zip233_amount.as_ref(),
             ),
             digester.digest_transparent(self.transparent_bundle.as_ref()),
@@ -506,7 +501,6 @@ impl<A: Authorization> TransactionData<A> {
             sprout_bundle: self.sprout_bundle,
             sapling_bundle: f_sapling(self.sapling_bundle),
             orchard_bundle: f_orchard(self.orchard_bundle),
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: self.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle: f_tze(self.tze_bundle),
@@ -545,7 +539,6 @@ impl<A: Authorization> TransactionData<A> {
                     |f, a| f.map_authorization(a),
                 )
             }),
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: self.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle: self.tze_bundle.map(|b| b.map_authorization(f_tze)),
@@ -695,7 +688,6 @@ impl Transaction {
                     )
                 }),
                 orchard_bundle: None,
-                #[cfg(zcash_unstable = "nsm")]
                 zip233_amount: None,
                 #[cfg(zcash_unstable = "tze")]
                 tze_bundle: None,
@@ -733,7 +725,6 @@ impl Transaction {
         let sapling_bundle = sapling_serialization::read_v5_bundle(&mut reader)?;
         let orchard_bundle = orchard_serialization::read_v5_bundle(&mut reader)?;
 
-        #[cfg(zcash_unstable = "nsm")]
         let zip233_amount = None;
 
         #[cfg(zcash_unstable = "tze")]
@@ -748,7 +739,6 @@ impl Transaction {
             sprout_bundle: None,
             sapling_bundle,
             orchard_bundle,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle,
@@ -764,7 +754,6 @@ impl Transaction {
         let sapling_bundle = sapling_serialization::read_v5_bundle(&mut reader)?;
         let orchard_bundle = orchard_serialization::read_v5_bundle(&mut reader)?;
 
-        #[cfg(zcash_unstable = "nsm")]
         let zip233_amount = if version == TxVersion::Zip230 {
             Some(Self::read_zip233_amount(&mut reader)?)
         } else {
@@ -783,7 +772,6 @@ impl Transaction {
             sprout_bundle: None,
             sapling_bundle,
             orchard_bundle,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle,
@@ -813,7 +801,6 @@ impl Transaction {
         sapling_serialization::read_v5_bundle(reader)
     }
 
-    #[cfg(zcash_unstable = "nsm")]
     fn read_zip233_amount<R: Read>(mut reader: R) -> io::Result<NonNegativeAmount> {
         NonNegativeAmount::from_u64(reader.read_u64::<LittleEndian>()?)
             .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "burnAmount out of range"))
@@ -929,7 +916,6 @@ impl Transaction {
         self.write_v5_sapling(&mut writer)?;
         orchard_serialization::write_v5_bundle(self.orchard_bundle.as_ref(), &mut writer)?;
 
-        #[cfg(zcash_unstable = "nsm")]
         if let Some(zip233_amount) = self.zip233_amount {
             writer.write_u64::<LittleEndian>(zip233_amount.into())?;
         }
@@ -1019,7 +1005,6 @@ pub trait TransactionDigest<A: Authorization> {
         consensus_branch_id: BranchId,
         lock_time: u32,
         expiry_height: BlockHeight,
-        #[cfg(zcash_unstable = "nsm")]
         zip233_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest;
 
@@ -1069,7 +1054,6 @@ pub mod testing {
         Authorized, Transaction, TransactionData, TxId, TxVersion,
     };
 
-    #[cfg(zcash_unstable = "nsm")]
     use {super::components::amount::NonNegativeAmount, zcash_protocol::value::MAX_MONEY};
 
     #[cfg(zcash_unstable = "tze")]
@@ -1094,32 +1078,7 @@ pub mod testing {
         }
     }
 
-    #[cfg(all(not(zcash_unstable = "nsm"), not(zcash_unstable = "tze")))]
-    prop_compose! {
-        pub fn arb_txdata(consensus_branch_id: BranchId)(
-            version in arb_tx_version(consensus_branch_id),
-        )(
-            lock_time in any::<u32>(),
-            expiry_height in any::<u32>(),
-            transparent_bundle in transparent::arb_bundle(),
-            sapling_bundle in sapling::arb_bundle_for_version(version),
-            orchard_bundle in orchard::arb_bundle_for_version(version),
-            version in Just(version)
-        ) -> TransactionData<Authorized> {
-            TransactionData {
-                version,
-                consensus_branch_id,
-                lock_time,
-                expiry_height: expiry_height.into(),
-                transparent_bundle,
-                sprout_bundle: None,
-                sapling_bundle,
-                orchard_bundle
-            }
-        }
-    }
-
-    #[cfg(all(zcash_unstable = "nsm", not(zcash_unstable = "tze")))]
+    #[cfg(not(zcash_unstable = "tze"))]
     prop_compose! {
         pub fn arb_txdata(consensus_branch_id: BranchId)(
             version in arb_tx_version(consensus_branch_id)
@@ -1146,34 +1105,7 @@ pub mod testing {
         }
     }
 
-    #[cfg(all(not(zcash_unstable = "nsm"), zcash_unstable = "tze"))]
-    prop_compose! {
-        pub fn arb_txdata(consensus_branch_id: BranchId)(
-            version in arb_tx_version(consensus_branch_id),
-        )(
-            lock_time in any::<u32>(),
-            expiry_height in any::<u32>(),
-            transparent_bundle in transparent::arb_bundle(),
-            sapling_bundle in sapling::arb_bundle_for_version(version),
-            orchard_bundle in orchard::arb_bundle_for_version(version),
-            tze_bundle in tze::arb_bundle(consensus_branch_id),
-            version in Just(version)
-        ) -> TransactionData<Authorized> {
-            TransactionData {
-                version,
-                consensus_branch_id,
-                lock_time,
-                expiry_height: expiry_height.into(),
-                transparent_bundle,
-                sprout_bundle: None,
-                sapling_bundle,
-                orchard_bundle,
-                tze_bundle
-            }
-        }
-    }
-
-    #[cfg(all(zcash_unstable = "nsm", zcash_unstable = "tze"))]
+    #[cfg(zcash_unstable = "tze")]
     prop_compose! {
         pub fn arb_txdata(consensus_branch_id: BranchId)(
             version in arb_tx_version(consensus_branch_id),

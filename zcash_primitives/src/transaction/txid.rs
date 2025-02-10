@@ -23,7 +23,6 @@ use super::{
     Authorization, Authorized, TransactionDigest, TransparentDigests, TxDigests, TxId, TxVersion,
 };
 
-#[cfg(zcash_unstable = "nsm")]
 use super::components::amount::NonNegativeAmount;
 
 #[cfg(zcash_unstable = "tze")]
@@ -230,7 +229,6 @@ fn hash_header_txid_data(
     consensus_branch_id: BranchId,
     lock_time: u32,
     expiry_height: BlockHeight,
-    #[cfg(zcash_unstable = "nsm")]
     zip233_amount: Option<&NonNegativeAmount>,
 ) -> Blake2bHash {
     let mut h = hasher(ZCASH_HEADERS_HASH_PERSONALIZATION);
@@ -243,7 +241,6 @@ fn hash_header_txid_data(
     h.write_u32::<LittleEndian>(lock_time).unwrap();
     h.write_u32::<LittleEndian>(expiry_height.into()).unwrap();
 
-    #[cfg(zcash_unstable = "nsm")]
     if let Some(&zip233_amount) = zip233_amount {
         h.write_u64::<LittleEndian>(zip233_amount.into()).unwrap();
     }
@@ -323,7 +320,6 @@ impl<A: Authorization> TransactionDigest<A> for TxIdDigester {
         consensus_branch_id: BranchId,
         lock_time: u32,
         expiry_height: BlockHeight,
-        #[cfg(zcash_unstable = "nsm")]
         zip233_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest {
         hash_header_txid_data(
@@ -331,7 +327,6 @@ impl<A: Authorization> TransactionDigest<A> for TxIdDigester {
             consensus_branch_id,
             lock_time,
             expiry_height,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount
         )
     }
@@ -465,7 +460,6 @@ impl TransactionDigest<Authorized> for BlockTxCommitmentDigester {
         consensus_branch_id: BranchId,
         _lock_time: u32,
         _expiry_height: BlockHeight,
-        #[cfg(zcash_unstable = "nsm")]
         _zip233_amount: Option<&NonNegativeAmount>,
     ) -> Self::HeaderDigest {
         consensus_branch_id

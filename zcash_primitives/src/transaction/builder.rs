@@ -32,7 +32,6 @@ use crate::{
     },
 };
 
-#[cfg(zcash_unstable = "nsm")]
 use zcash_protocol::value::ZatBalance;
 
 #[cfg(feature = "transparent-inputs")]
@@ -290,7 +289,6 @@ pub struct Builder<'a, P, U: sapling::builder::ProverProgress> {
     // derivatives for proving and signing to complete transaction creation.
     sapling_asks: Vec<sapling::keys::SpendAuthorizingKey>,
     orchard_saks: Vec<orchard::keys::SpendAuthorizingKey>,
-    #[cfg(zcash_unstable = "nsm")]
     zip233_amount: Option<NonNegativeAmount>,
     #[cfg(zcash_unstable = "zfuture")]
     tze_builder: TzeBuilder<'a, TransactionData<Unauthorized>>,
@@ -377,7 +375,6 @@ impl<'a, P: consensus::Parameters> Builder<'a, P, ()> {
             orchard_builder,
             sapling_asks: vec![],
             orchard_saks: Vec::new(),
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: None,
             #[cfg(zcash_unstable = "zfuture")]
             tze_builder: TzeBuilder::empty(),
@@ -407,7 +404,6 @@ impl<'a, P: consensus::Parameters> Builder<'a, P, ()> {
             orchard_builder: self.orchard_builder,
             sapling_asks: self.sapling_asks,
             orchard_saks: self.orchard_saks,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: self.zip233_amount,
             tze_builder: self.tze_builder,
             progress_notifier,
@@ -533,7 +529,6 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
                         .map_err(|_| BalanceError::Overflow)
                 },
             )?,
-            #[cfg(zcash_unstable = "nsm")]
             -self
                 .zip233_amount
                 .map(Into::into)
@@ -645,7 +640,6 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
             .map_err(FeeError::FeeRule)
     }
 
-    #[cfg(zcash_unstable = "nsm")]
     pub fn set_zip233_amount(&mut self, zip233_amount: Option<NonNegativeAmount>) {
         self.zip233_amount = zip233_amount;
     }
@@ -774,7 +768,6 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
             sprout_bundle: None,
             sapling_bundle,
             orchard_bundle,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: self.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle,
@@ -844,7 +837,6 @@ impl<'a, P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<
             sprout_bundle: unauthed_tx.sprout_bundle,
             sapling_bundle,
             orchard_bundle,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: self.zip233_amount,
             #[cfg(zcash_unstable = "tze")]
             tze_bundle,
@@ -1003,7 +995,6 @@ mod tests {
             expiry_height: sapling_activation_height + DEFAULT_TX_EXPIRY_DELTA,
             transparent_builder: TransparentBuilder::empty(),
             sapling_builder: None,
-            #[cfg(zcash_unstable = "nsm")]
             zip233_amount: None,
             #[cfg(zcash_unstable = "zfuture")]
             tze_builder: TzeBuilder::empty(),
@@ -1168,21 +1159,18 @@ mod tests {
 
         // Fail if there is only a burn
         // 0.0005 burned, 0.0001 t-ZEC fee
-        #[cfg(zcash_unstable = "nsm")]
-        {
-            let build_config = BuildConfig::Standard {
-                sapling_anchor: Some(sapling::Anchor::empty_tree()),
-                orchard_anchor: Some(orchard::Anchor::empty_tree()),
-            };
-            let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
-            builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(50000)));
+        let build_config = BuildConfig::Standard {
+            sapling_anchor: Some(sapling::Anchor::empty_tree()),
+            orchard_anchor: Some(orchard::Anchor::empty_tree()),
+        };
+        let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
+        builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(50000)));
 
-            assert_matches!(
-                builder.mock_build(OsRng),
-                Err(Error::InsufficientFunds(expected)) if expected ==
-                    (NonNegativeAmount::const_from_u64(50000) + MINIMUM_FEE).unwrap().into()
-            );
-        }
+        assert_matches!(
+            builder.mock_build(OsRng),
+            Err(Error::InsufficientFunds(expected)) if expected ==
+                (NonNegativeAmount::const_from_u64(50000) + MINIMUM_FEE).unwrap().into()
+        );
 
         let note1 = to.create_note(
             sapling::value::NoteValue::from_raw(59999),
@@ -1225,36 +1213,33 @@ mod tests {
         }
 
         // 0.0003 z-ZEC out, 0.00005 t-ZEC out, 0.0001 burned, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
-        #[cfg(zcash_unstable = "nsm")]
-        {
-            let build_config = BuildConfig::Standard {
-                sapling_anchor: Some(witness1.root().into()),
-                orchard_anchor: Some(orchard::Anchor::empty_tree()),
-            };
-            let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
-            builder
-                .add_sapling_spend::<Infallible>(&extsk, note1.clone(), witness1.path().unwrap())
-                .unwrap();
-            builder
-                .add_sapling_output::<Infallible>(
-                    ovk,
-                    to,
-                    NonNegativeAmount::const_from_u64(30000),
-                    MemoBytes::empty(),
-                )
-                .unwrap();
-            builder
-                .add_transparent_output(
-                    &TransparentAddress::PublicKeyHash([0; 20]),
-                    NonNegativeAmount::const_from_u64(5000),
-                )
-                .unwrap();
-            builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(10000)));
-            assert_matches!(
-                builder.mock_build(OsRng),
-                Err(Error::InsufficientFunds(expected)) if expected == Amount::const_from_i64(1)
-            );
-        }
+        let build_config = BuildConfig::Standard {
+            sapling_anchor: Some(witness1.root().into()),
+            orchard_anchor: Some(orchard::Anchor::empty_tree()),
+        };
+        let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
+        builder
+            .add_sapling_spend::<Infallible>(&extsk, note1.clone(), witness1.path().unwrap())
+            .unwrap();
+        builder
+            .add_sapling_output::<Infallible>(
+                ovk,
+                to,
+                NonNegativeAmount::const_from_u64(30000),
+                MemoBytes::empty(),
+            )
+            .unwrap();
+        builder
+            .add_transparent_output(
+                &TransparentAddress::PublicKeyHash([0; 20]),
+                NonNegativeAmount::const_from_u64(5000),
+            )
+            .unwrap();
+        builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(10000)));
+        assert_matches!(
+            builder.mock_build(OsRng),
+            Err(Error::InsufficientFunds(expected)) if expected == Amount::const_from_i64(1)
+        );
 
         let note2 = to.create_note(
             sapling::value::NoteValue::from_raw(1),
@@ -1304,41 +1289,38 @@ mod tests {
 
         // Succeeds if there is sufficient input
         // 0.0003 z-ZEC out, 0.00005 t-ZEC out, 0.0001 burned, 0.00015 t-ZEC fee, 0.0006 z-ZEC in
-        #[cfg(zcash_unstable = "nsm")]
-        {
-            let build_config = BuildConfig::Standard {
-                sapling_anchor: Some(witness1.root().into()),
-                orchard_anchor: Some(orchard::Anchor::empty_tree()),
-            };
-            let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
-            builder
-                .add_sapling_spend::<Infallible>(&extsk, note1, witness1.path().unwrap())
-                .unwrap();
-            builder
-                .add_sapling_spend::<Infallible>(&extsk, note2, witness2.path().unwrap())
-                .unwrap();
-            builder
-                .add_sapling_output::<Infallible>(
-                    ovk,
-                    to,
-                    NonNegativeAmount::const_from_u64(30000),
-                    MemoBytes::empty(),
-                )
-                .unwrap();
-            builder
-                .add_transparent_output(
-                    &TransparentAddress::PublicKeyHash([0; 20]),
-                    NonNegativeAmount::const_from_u64(5000),
-                )
-                .unwrap();
-            builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(10000)));
-            let res = builder.mock_build(OsRng).unwrap();
-            assert_eq!(
-                res.transaction()
-                    .fee_paid(|_| Err(BalanceError::Overflow))
-                    .unwrap(),
-                Amount::const_from_i64(15_000)
-            );
-        }
+        let build_config = BuildConfig::Standard {
+            sapling_anchor: Some(witness1.root().into()),
+            orchard_anchor: Some(orchard::Anchor::empty_tree()),
+        };
+        let mut builder = Builder::new(TEST_NETWORK, tx_height, build_config);
+        builder
+            .add_sapling_spend::<Infallible>(&extsk, note1, witness1.path().unwrap())
+            .unwrap();
+        builder
+            .add_sapling_spend::<Infallible>(&extsk, note2, witness2.path().unwrap())
+            .unwrap();
+        builder
+            .add_sapling_output::<Infallible>(
+                ovk,
+                to,
+                NonNegativeAmount::const_from_u64(30000),
+                MemoBytes::empty(),
+            )
+            .unwrap();
+        builder
+            .add_transparent_output(
+                &TransparentAddress::PublicKeyHash([0; 20]),
+                NonNegativeAmount::const_from_u64(5000),
+            )
+            .unwrap();
+        builder.set_zip233_amount(Some(NonNegativeAmount::const_from_u64(10000)));
+        let res = builder.mock_build(OsRng).unwrap();
+        assert_eq!(
+            res.transaction()
+                .fee_paid(|_| Err(BalanceError::Overflow))
+                .unwrap(),
+            Amount::const_from_i64(15_000)
+        );
     }
 }
