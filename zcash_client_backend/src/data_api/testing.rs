@@ -1390,6 +1390,7 @@ impl TestBuilder<(), ()> {
         canopy: Some(BlockHeight::from_u32(100_000)),
         nu5: Some(BlockHeight::from_u32(100_000)),
         nu6: None,
+        nu7: None,
         #[cfg(zcash_unstable = "zfuture")]
         z_future: None,
     };

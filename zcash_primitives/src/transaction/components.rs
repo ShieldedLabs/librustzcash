@@ -2,7 +2,7 @@
 pub mod orchard;
 pub mod sapling;
 pub mod sprout;
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 pub mod tze;
 
 pub use self::sprout::JsDescription;
@@ -54,7 +54,7 @@ pub type OutputDescription<A> = ::sapling::bundle::OutputDescription<A>;
 #[deprecated(note = "Use `::sapling_crypto::bundle::SpendDescription` instead.")]
 pub type SpendDescription<A> = ::sapling::bundle::SpendDescription<A>;
 
-#[cfg(zcash_unstable = "zfuture")]
+#[cfg(zcash_unstable = "tze")]
 pub use self::tze::{TzeIn, TzeOut};
 
 // π_A + π_B + π_C
