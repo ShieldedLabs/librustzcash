@@ -7382,6 +7382,8 @@ pub mod zip_0244 {
 
 #[cfg(not(zcash_unstable = "tze"))]
 pub mod zip_0233 {
+    use std::vec::Vec;
+
     pub struct TestVector {
         pub tx: Vec<u8>,
         pub txid: [u8; 32],

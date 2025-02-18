@@ -9,6 +9,8 @@ use ::transparent::{
 };
 use zcash_protocol::{consensus::BranchId, value::Zatoshis};
 
+use crate::transaction::TxVersion;
+
 use super::{
     sighash::SignableInput,
     sighash_v4::v4_signature_hash,
@@ -21,8 +23,6 @@ use super::{
 
 #[cfg(zcash_unstable = "tze")]
 use super::components::tze;
-#[cfg(not(zcash_unstable = "tze"))]
-use super::sighash::{SIGHASH_ALL, SIGHASH_ANYONECANPAY, SIGHASH_NONE, SIGHASH_SINGLE};
 
 #[test]
 fn tx_read_write() {
@@ -382,7 +382,7 @@ fn zip_0233() {
         let input_amounts = tv
             .amounts
             .iter()
-            .map(|amount| NonNegativeAmount::from_nonnegative_i64(*amount).unwrap())
+            .map(|amount| Zatoshis::from_nonnegative_i64(*amount).unwrap())
             .collect();
         let input_scriptpubkeys = tv
             .script_pubkeys
