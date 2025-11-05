@@ -825,7 +825,7 @@ impl<P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<'_, 
             sprout_bundle: None,
             sapling_bundle,
             orchard_bundle,
-            crosslink_data: super::CommandBuf::empty(), // TODO: real data?
+            staking_action: None, // TODO: real data?
             #[cfg(zcash_unstable = "zfuture")]
             tze_bundle,
         };
@@ -907,7 +907,7 @@ impl<P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<'_, 
             sprout_bundle: unauthed_tx.sprout_bundle,
             sapling_bundle,
             orchard_bundle,
-            crosslink_data: super::CommandBuf::empty(), // TODO: real data?
+            staking_action: None, // TODO: real data?
             #[cfg(zcash_unstable = "zfuture")]
             tze_bundle,
         };
