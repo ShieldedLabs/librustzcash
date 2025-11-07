@@ -1622,7 +1622,6 @@ pub mod testing {
 
     use super::{
         Authorized, Transaction, TransactionData, TxId, TxVersion,
-        CommandBuf,
         components::{
             orchard::testing::{self as orchard},
             sapling::testing::{self as sapling},
