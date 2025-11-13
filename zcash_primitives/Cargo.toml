@@ -95,6 +95,8 @@ fpe.workspace = true
 # No-std support
 core2.workspace = true
 
+serde.workspace = true
+
 [dependencies.zcash_note_encryption]
 workspace = true
 features = ["pre-zip-212"]
