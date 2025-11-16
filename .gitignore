@@ -1,8 +1,1 @@
-/target
-*/.vs
-*.vcxproj.user
-*/x64/Release
-*.idea/
-*.scratch
-*.DS_Store
-*/target
+target
