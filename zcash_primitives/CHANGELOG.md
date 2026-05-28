@@ -10,6 +10,14 @@ workspace.
 
 ## [Unreleased]
 
+### Added
+- `zcash_primitives::transaction::builder::Builder`:
+  - `expiry_height`: Returns the expiry height currently set for this builder.
+  - `with_expiry_delta` (requires the `non-standard-fees` feature): Sets a
+    non-standard expiry height for the transaction, specified as a delta from
+    the target block height. This is useful for wallet recovery scenarios where
+    a shorter expiry window is desired for replacement transactions.
+
 ## [0.27.1] - 2026-05-14
 
 ### Fixed

@@ -807,6 +807,38 @@ impl<P: consensus::Parameters, U> Builder<'_, P, U> {
     pub fn set_zip233_amount(&mut self, zip233_amount: Zatoshis) {
         self.zip233_amount = zip233_amount;
     }
+
+    /// Returns the expiry height currently set for this builder.
+    pub fn expiry_height(&self) -> BlockHeight {
+        self.expiry_height
+    }
+
+    /// Sets a non-standard expiry height for the transaction, specified as a delta
+    /// from the target block height.
+    ///
+    /// This is useful for wallet recovery scenarios where a shorter expiry window
+    /// is desired for replacement transactions.
+    ///
+    /// # Warning
+    ///
+    /// Using a non-default expiry delta can make transactions more distinguishable,
+    /// potentially reducing privacy. The standard expiry delta is 40 blocks
+    /// ([`DEFAULT_TX_EXPIRY_DELTA`]).
+    ///
+    /// # Panics
+    ///
+    /// Panics if this builder was created for a coinbase transaction, as coinbase
+    /// transactions must have expiry height equal to their block height per consensus
+    /// rules (NU5 onward).
+    #[cfg(feature = "non-standard-fees")]
+    pub fn with_expiry_delta(mut self, expiry_delta: u32) -> Self {
+        assert!(
+            !self.build_config.is_coinbase(),
+            "Cannot set custom expiry for coinbase transactions"
+        );
+        self.expiry_height = self.target_height + expiry_delta;
+        self
+    }
 }
 
 impl<P: consensus::Parameters, U: sapling::builder::ProverProgress> Builder<'_, P, U> {
