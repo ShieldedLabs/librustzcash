@@ -33,6 +33,11 @@ workspace.
 - `zcash_client_backend::data_api::wallet::ProposeShieldingCoinbaseErrT` type
   alias, parallel to `ProposeShieldingErrT` but parameterized on a `FeeRule`
   instead of a `ChangeStrategy`.
+- `zcash_client_backend::data_api::wallet::create_proposed_transactions_with_expiry_delta`
+  (requires the `non-standard-fees` feature): Equivalent to
+  `create_proposed_transactions` but allows specifying a non-standard
+  transaction expiry window. This is useful for wallet recovery scenarios
+  where a shorter expiry window is desired for replacement transactions.
 
 ### Changed
 - `zcash_client_backend::data_api`:
