@@ -985,6 +985,8 @@ where
             &proposal,
             #[cfg(feature = "unstable")]
             None,
+            #[cfg(feature = "non-standard-fees")]
+            None,
         )
     }
 
@@ -1197,6 +1199,8 @@ where
             ovk_policy,
             proposal,
             #[cfg(feature = "unstable")]
+            None,
+            #[cfg(feature = "non-standard-fees")]
             None,
         )
     }

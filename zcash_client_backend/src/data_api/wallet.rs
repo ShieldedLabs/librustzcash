@@ -999,6 +999,17 @@ impl SpendingKeys {
 /// step is not supported, because the ultimate positions of those notes in the global note
 /// commitment tree cannot be known until the transaction that produces those notes is mined,
 /// and therefore the required spend proofs for such notes cannot be constructed.
+///
+/// # Parameters (requires the `non-standard-fees` feature)
+/// - `expiry_delta`: Optional number of blocks after `proposal.min_target_height()` when the
+///   transaction(s) expire. If `None`, the standard expiry delta of 40 blocks is used.
+///   Use [`zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA`] if you want
+///   to explicitly pass the default value.
+///
+/// # Warning
+///
+/// Using a non-default expiry delta can make transactions more distinguishable,
+/// potentially reducing privacy.
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::type_complexity)]
 pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeErrT, N>(
@@ -1010,6 +1021,7 @@ pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeEr
     ovk_policy: OvkPolicy,
     proposal: &Proposal<FeeRuleT, N>,
     #[cfg(feature = "unstable")] proposed_version: Option<TxVersion>,
+    #[cfg(feature = "non-standard-fees")] expiry_delta: Option<u32>,
 ) -> Result<NonEmpty<TxId>, CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>>
 where
     DbT: WalletWrite + WalletCommitmentTrees,
@@ -1047,7 +1059,7 @@ where
             #[cfg(feature = "unstable")]
             proposed_version,
             #[cfg(feature = "non-standard-fees")]
-            None,
+            expiry_delta,
         )?;
         step_results.push((step, step_result));
     }
@@ -1069,119 +1081,6 @@ where
     // Store the transactions only after creating all of them. This avoids undesired
     // retransmissions in case a transaction is stored and the creation of a subsequent
     // transaction fails.
-    let mut transactions = Vec::with_capacity(step_results.len());
-    let mut txids = Vec::with_capacity(step_results.len());
-    #[allow(unused_variables)]
-    for (_, step_result) in step_results.iter() {
-        let tx = step_result.build_result.transaction();
-        transactions.push(SentTransaction::new(
-            tx,
-            created,
-            proposal.min_target_height(),
-            account_id,
-            &step_result.outputs,
-            step_result.fee_amount,
-            #[cfg(feature = "transparent-inputs")]
-            &step_result.utxos_spent,
-        ));
-        txids.push(tx.txid());
-    }
-
-    wallet_db
-        .store_transactions_to_be_sent(&transactions)
-        .map_err(Error::DataSource)?;
-
-    Ok(NonEmpty::from_vec(txids).expect("proposal.steps is NonEmpty"))
-}
-
-/// Construct, prove, and sign a transaction or series of transactions using the inputs supplied by
-/// the given proposal, with a custom expiry delta, and persist it to the wallet database.
-///
-/// This is equivalent to [`create_proposed_transactions`] but allows specifying
-/// a non-standard transaction expiry window.
-///
-/// # Parameters
-/// - `expiry_delta`: Number of blocks after `proposal.min_target_height()` when the
-///   transaction(s) expire. The standard expiry delta is 40 blocks; use
-///   [`zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA`] if you want
-///   to explicitly pass the default value.
-///
-/// # Warning
-///
-/// Using a non-default expiry delta can make transactions more distinguishable,
-/// potentially reducing privacy.
-///
-/// [`create_proposed_transactions`]: crate::data_api::wallet::create_proposed_transactions
-#[allow(clippy::too_many_arguments)]
-#[allow(clippy::type_complexity)]
-#[cfg(feature = "non-standard-fees")]
-pub fn create_proposed_transactions_with_expiry_delta<
-    DbT,
-    ParamsT,
-    InputsErrT,
-    FeeRuleT,
-    ChangeErrT,
-    N,
->(
-    wallet_db: &mut DbT,
-    params: &ParamsT,
-    spend_prover: &impl SpendProver,
-    output_prover: &impl OutputProver,
-    spending_keys: &SpendingKeys,
-    ovk_policy: OvkPolicy,
-    proposal: &Proposal<FeeRuleT, N>,
-    expiry_delta: u32,
-    #[cfg(feature = "unstable")] proposed_version: Option<TxVersion>,
-) -> Result<NonEmpty<TxId>, CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>>
-where
-    DbT: WalletWrite + WalletCommitmentTrees,
-    ParamsT: consensus::Parameters + Clone,
-    FeeRuleT: FeeRule,
-{
-    #[cfg(feature = "transparent-inputs")]
-    let mut unused_transparent_outputs = HashMap::new();
-
-    let account_id = wallet_db
-        .get_account_for_ufvk(&spending_keys.usk.to_unified_full_viewing_key())
-        .map_err(Error::DataSource)?
-        .ok_or(Error::KeyNotRecognized)?
-        .id();
-
-    let mut step_results = Vec::with_capacity(proposal.steps().len());
-    for step in proposal.steps() {
-        let step_result: StepResult<_> = create_proposed_transaction(
-            wallet_db,
-            params,
-            spend_prover,
-            output_prover,
-            spending_keys,
-            account_id,
-            ovk_policy.clone(),
-            proposal.fee_rule(),
-            proposal.min_target_height(),
-            &step_results,
-            step,
-            #[cfg(feature = "transparent-inputs")]
-            &mut unused_transparent_outputs,
-            #[cfg(feature = "unstable")]
-            proposed_version,
-            Some(expiry_delta),
-        )?;
-        step_results.push((step, step_result));
-    }
-
-    // Ephemeral outputs must be referenced exactly once.
-    #[cfg(feature = "transparent-inputs")]
-    for so in unused_transparent_outputs.into_keys() {
-        if let StepOutputIndex::Change(i) = so.output_index() {
-            if step_results[so.step_index()].0.balance().proposed_change()[i].is_ephemeral() {
-                return Err(ProposalError::EphemeralOutputLeftUnspent(so).into());
-            }
-        }
-    }
-
-    let created = time::OffsetDateTime::now_utc();
-
     let mut transactions = Vec::with_capacity(step_results.len());
     let mut txids = Vec::with_capacity(step_results.len());
     #[allow(unused_variables)]
@@ -2881,6 +2780,8 @@ where
         OvkPolicy::Sender,
         &proposal,
         #[cfg(feature = "unstable")]
+        None,
+        #[cfg(feature = "non-standard-fees")]
         None,
     )
 }
