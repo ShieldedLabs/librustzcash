@@ -2150,9 +2150,9 @@ where
         #[cfg(feature = "transparent-inputs")]
         unused_transparent_outputs,
         #[cfg(feature = "unstable")]
-        None,
+        None, // proposed_version
         #[cfg(feature = "non-standard-fees")]
-        None,
+        None, // expiry_delta
     )?;
 
     // Build the transaction with the specified fee rule
