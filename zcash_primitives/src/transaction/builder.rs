@@ -1837,4 +1837,67 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn expiry_height_accessor() {
+        use zcash_protocol::consensus::{NetworkUpgrade, Parameters, TEST_NETWORK};
+
+        let sapling_activation_height = TEST_NETWORK
+            .activation_height(NetworkUpgrade::Sapling)
+            .unwrap();
+
+        let build_config = super::BuildConfig::Standard {
+            sapling_anchor: Some(sapling::Anchor::empty_tree()),
+            orchard_anchor: Some(orchard::Anchor::empty_tree()),
+        };
+        let builder = super::Builder::new(TEST_NETWORK, sapling_activation_height, build_config);
+
+        // Default expiry should be target_height + DEFAULT_TX_EXPIRY_DELTA
+        assert_eq!(
+            builder.expiry_height(),
+            sapling_activation_height + super::DEFAULT_TX_EXPIRY_DELTA
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "non-standard-fees")]
+    fn with_expiry_delta() {
+        use zcash_protocol::consensus::{NetworkUpgrade, Parameters, TEST_NETWORK};
+
+        let sapling_activation_height = TEST_NETWORK
+            .activation_height(NetworkUpgrade::Sapling)
+            .unwrap();
+
+        let build_config = super::BuildConfig::Standard {
+            sapling_anchor: Some(sapling::Anchor::empty_tree()),
+            orchard_anchor: Some(orchard::Anchor::empty_tree()),
+        };
+        let builder = super::Builder::new(TEST_NETWORK, sapling_activation_height, build_config);
+
+        // Use a custom expiry delta
+        let custom_delta = 20;
+        let builder = builder.with_expiry_delta(custom_delta);
+
+        assert_eq!(
+            builder.expiry_height(),
+            sapling_activation_height + custom_delta
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "non-standard-fees")]
+    #[should_panic(expected = "Cannot set custom expiry for coinbase transactions")]
+    fn with_expiry_delta_panics_for_coinbase() {
+        use zcash_protocol::consensus::{NetworkUpgrade, Parameters, TEST_NETWORK};
+
+        let sapling_activation_height = TEST_NETWORK
+            .activation_height(NetworkUpgrade::Sapling)
+            .unwrap();
+
+        let build_config = super::BuildConfig::Coinbase { miner_data: None };
+        let builder = super::Builder::new(TEST_NETWORK, sapling_activation_height, build_config);
+
+        // This should panic because coinbase transactions cannot have custom expiry
+        let _ = builder.with_expiry_delta(20);
+    }
 }
