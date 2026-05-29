@@ -350,6 +350,96 @@ pub fn send_single_step_proposed_transfer<T: ShieldedPoolTester>(
     );
 }
 
+/// Tests sending funds with a custom expiry delta.
+///
+/// The test:
+/// - Adds funds to the wallet in a single note.
+/// - Constructs a request to spend part of that balance.
+/// - Builds the transaction with a custom expiry delta.
+/// - Verifies that the transaction's expiry height matches target_height + custom_delta.
+#[cfg(feature = "non-standard-fees")]
+pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTester>(
+    dsf: impl DataStoreFactory,
+    cache: impl TestCache,
+) {
+    use super::pool::dsl::TestDsl;
+    use zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA;
+
+    let mut st = TestDsl::with_sapling_birthday_account(dsf, cache).build::<T>();
+
+    // Add funds to the wallet in a single note
+    let (_h, _, _) = st.add_a_single_note_checking_balance(Zatoshis::const_from_u64(60000));
+
+    let to_extsk = T::sk(&[0xf5; 32]);
+    let to: Address = T::sk_default_address(&to_extsk);
+    let request = zip321::TransactionRequest::new(vec![Payment::without_memo(
+        to.to_zcash_address(st.network()),
+        Zatoshis::const_from_u64(10000),
+    )])
+    .unwrap();
+
+    let fee_rule = StandardFeeRule::Zip317;
+    let change_strategy = standard::SingleOutputChangeStrategy::new(
+        fee_rule,
+        None,
+        T::SHIELDED_PROTOCOL,
+        DustOutputPolicy::default(),
+    );
+    let input_selector = GreedyInputSelector::new();
+
+    let account = st.get_account();
+    let proposal = st
+        .propose_transfer(
+            account.id(),
+            &input_selector,
+            &change_strategy,
+            request,
+            ConfirmationsPolicy::MIN,
+        )
+        .unwrap();
+
+    // Test with custom expiry delta (20 blocks instead of default 40)
+    let custom_delta = 20u32;
+    let create_proposed_result = st
+        .create_proposed_transactions_with_expiry_delta::<Infallible, _, Infallible, _>(
+            account.usk(),
+            OvkPolicy::Sender,
+            &proposal,
+            Some(custom_delta),
+        );
+    assert_matches!(&create_proposed_result, Ok(txids) if txids.len() == 1);
+
+    let sent_tx_id = create_proposed_result.unwrap()[0];
+
+    // Verify that the sent transaction was stored with the custom expiry
+    let tx = st
+        .wallet()
+        .get_transaction(sent_tx_id)
+        .unwrap()
+        .expect("Created transaction was stored.");
+
+    // Verify the expiry height is target_height + custom_delta
+    let expected_expiry = proposal.min_target_height() + custom_delta;
+    assert_eq!(
+        tx.expiry_height(),
+        expected_expiry,
+        "Transaction expiry height should be min_target_height ({:?}) + custom_delta ({}), got {:?}",
+        proposal.min_target_height(),
+        custom_delta,
+        tx.expiry_height()
+    );
+
+    // Verify it's different from the default
+    let default_expiry = proposal.min_target_height() + DEFAULT_TX_EXPIRY_DELTA;
+    assert_ne!(
+        tx.expiry_height(),
+        default_expiry,
+        "Custom expiry ({}) should differ from default ({})",
+        custom_delta,
+        DEFAULT_TX_EXPIRY_DELTA
+    );
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct ConfirmationStep {
     i: u32,

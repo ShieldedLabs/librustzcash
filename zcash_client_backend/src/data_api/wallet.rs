@@ -999,6 +999,17 @@ impl SpendingKeys {
 /// step is not supported, because the ultimate positions of those notes in the global note
 /// commitment tree cannot be known until the transaction that produces those notes is mined,
 /// and therefore the required spend proofs for such notes cannot be constructed.
+///
+/// # Parameters (requires the `non-standard-fees` feature)
+/// - `expiry_delta`: Optional number of blocks after `proposal.min_target_height()` when the
+///   transaction(s) expire. If `None`, the standard expiry delta of 40 blocks is used.
+///   Use [`zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA`] if you want
+///   to explicitly pass the default value.
+///
+/// # Warning
+///
+/// Using a non-default expiry delta can make transactions more distinguishable,
+/// potentially reducing privacy.
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::type_complexity)]
 pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeErrT, N>(
@@ -1010,6 +1021,7 @@ pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeEr
     ovk_policy: OvkPolicy,
     proposal: &Proposal<FeeRuleT, N>,
     #[cfg(feature = "unstable")] proposed_version: Option<TxVersion>,
+    #[cfg(feature = "non-standard-fees")] expiry_delta: Option<u32>,
 ) -> Result<NonEmpty<TxId>, CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>>
 where
     DbT: WalletWrite + WalletCommitmentTrees,
@@ -1046,6 +1058,8 @@ where
             &mut unused_transparent_outputs,
             #[cfg(feature = "unstable")]
             proposed_version,
+            #[cfg(feature = "non-standard-fees")]
+            expiry_delta,
         )?;
         step_results.push((step, step_result));
     }
@@ -1197,6 +1211,7 @@ fn build_proposed_transaction<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeErrT, N>
         (TransparentAddress, OutPoint),
     >,
     #[cfg(feature = "unstable")] proposed_version: Option<TxVersion>,
+    #[cfg(feature = "non-standard-fees")] expiry_delta: Option<u32>,
 ) -> Result<
     BuildState<'static, ParamsT, DbT::AccountId>,
     CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>,
@@ -1340,6 +1355,13 @@ where
     if let Some(version) = proposed_version {
         builder.propose_version(version)?;
     }
+
+    #[cfg(feature = "non-standard-fees")]
+    let mut builder = if let Some(delta) = expiry_delta {
+        builder.with_expiry_delta(delta)
+    } else {
+        builder
+    };
 
     #[cfg(all(feature = "transparent-inputs", not(feature = "orchard")))]
     let has_shielded_inputs = !sapling_inputs.is_empty();
@@ -1781,6 +1803,7 @@ fn create_proposed_transaction<DbT, ParamsT, InputsErrT, FeeRuleT, ChangeErrT, N
         (TransparentAddress, OutPoint),
     >,
     #[cfg(feature = "unstable")] proposed_version: Option<TxVersion>,
+    #[cfg(feature = "non-standard-fees")] expiry_delta: Option<u32>,
 ) -> Result<
     StepResult<<DbT as WalletRead>::AccountId>,
     CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>,
@@ -1803,6 +1826,8 @@ where
         unused_transparent_outputs,
         #[cfg(feature = "unstable")]
         proposed_version,
+        #[cfg(feature = "non-standard-fees")]
+        expiry_delta,
     )?;
 
     // Build the transaction with the specified fee rule
@@ -2024,7 +2049,9 @@ where
         #[cfg(feature = "transparent-inputs")]
         unused_transparent_outputs,
         #[cfg(feature = "unstable")]
-        None,
+        None, // proposed_version
+        #[cfg(feature = "non-standard-fees")]
+        None, // expiry_delta
     )?;
 
     // Build the transaction with the specified fee rule
@@ -2753,6 +2780,8 @@ where
         OvkPolicy::Sender,
         &proposal,
         #[cfg(feature = "unstable")]
+        None,
+        #[cfg(feature = "non-standard-fees")]
         None,
     )
 }

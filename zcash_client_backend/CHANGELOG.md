@@ -35,6 +35,12 @@ workspace.
   instead of a `ChangeStrategy`.
 
 ### Changed
+- `zcash_client_backend::data_api::wallet::create_proposed_transactions`
+  now accepts an optional `expiry_delta: Option<u32>` parameter (requires
+  the `non-standard-fees` feature) to specify a non-standard transaction
+  expiry window. This is useful for wallet recovery scenarios where a
+  shorter expiry window is desired for replacement transactions. Pass
+  `None` to use the standard 40-block expiry delta.
 - `zcash_client_backend::data_api`:
   - Changes to the `InputSource` trait:
     - The result types of `InputSource::get_unspent_transparent_output` and
