@@ -1205,6 +1205,39 @@ where
         )
     }
 
+    /// Invokes [`create_proposed_transactions`] with the given arguments and a custom
+    /// expiry delta.
+    ///
+    /// The `expiry_delta` parameter specifies the number of blocks after
+    /// `proposal.min_target_height()` when the transaction(s) expire.
+    #[cfg(feature = "non-standard-fees")]
+    #[allow(clippy::type_complexity)]
+    pub fn create_proposed_transactions_with_expiry_delta<InputsErrT, FeeRuleT, ChangeErrT, N>(
+        &mut self,
+        usk: &UnifiedSpendingKey,
+        ovk_policy: OvkPolicy,
+        proposal: &Proposal<FeeRuleT, N>,
+        expiry_delta: Option<u32>,
+    ) -> Result<NonEmpty<TxId>, super::wallet::CreateErrT<DbT, InputsErrT, FeeRuleT, ChangeErrT, N>>
+    where
+        FeeRuleT: FeeRule,
+    {
+        let prover = LocalTxProver::bundled();
+        let network = self.network().clone();
+        create_proposed_transactions(
+            self.wallet_mut(),
+            &network,
+            &prover,
+            &prover,
+            &SpendingKeys::from_unified_spending_key(usk.clone()),
+            ovk_policy,
+            proposal,
+            #[cfg(feature = "unstable")]
+            None,
+            expiry_delta,
+        )
+    }
+
     /// Invokes [`create_pczt_from_proposal`] with the given arguments.
     ///
     /// [`create_pczt_from_proposal`]: super::wallet::create_pczt_from_proposal

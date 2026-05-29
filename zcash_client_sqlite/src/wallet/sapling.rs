@@ -434,6 +434,11 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn send_single_step_proposed_transfer_with_custom_expiry() {
+        testing::pool::send_single_step_proposed_transfer_with_custom_expiry::<SaplingPoolTester>()
+    }
+
+    #[test]
     fn spend_max_spendable_single_step_proposed_transfer() {
         testing::pool::spend_max_spendable_single_step_proposed_transfer::<SaplingPoolTester>()
     }
