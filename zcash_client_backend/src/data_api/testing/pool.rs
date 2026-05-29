@@ -363,6 +363,7 @@ pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTest
     cache: impl TestCache,
 ) {
     use super::pool::dsl::TestDsl;
+    use zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA;
 
     let mut st = TestDsl::with_sapling_birthday_account(dsf, cache).build::<T>();
 
@@ -428,13 +429,14 @@ pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTest
         tx.expiry_height()
     );
 
-    // Verify it's different from the default (40 blocks)
-    let default_expiry = proposal.min_target_height() + 40u32;
+    // Verify it's different from the default
+    let default_expiry = proposal.min_target_height() + DEFAULT_TX_EXPIRY_DELTA;
     assert_ne!(
         tx.expiry_height(),
         default_expiry,
-        "Custom expiry ({}) should differ from default (40)",
-        custom_delta
+        "Custom expiry ({}) should differ from default ({})",
+        custom_delta,
+        DEFAULT_TX_EXPIRY_DELTA
     );
 }
 
