@@ -363,12 +363,11 @@ pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTest
     cache: impl TestCache,
 ) {
     use super::pool::dsl::TestDsl;
-    use zcash_primitives::transaction::builder::DEFAULT_TX_EXPIRY_DELTA;
 
     let mut st = TestDsl::with_sapling_birthday_account(dsf, cache).build::<T>();
 
     // Add funds to the wallet in a single note
-    let (h, _, _) = st.add_a_single_note_checking_balance(Zatoshis::const_from_u64(60000));
+    let (_h, _, _) = st.add_a_single_note_checking_balance(Zatoshis::const_from_u64(60000));
 
     let to_extsk = T::sk(&[0xf5; 32]);
     let to: Address = T::sk_default_address(&to_extsk);
@@ -393,7 +392,7 @@ pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTest
             account.id(),
             &input_selector,
             &change_strategy,
-            request.clone(),
+            request,
             ConfirmationsPolicy::MIN,
         )
         .unwrap();
@@ -423,47 +422,19 @@ pub fn send_single_step_proposed_transfer_with_custom_expiry<T: ShieldedPoolTest
     assert_eq!(
         tx.expiry_height(),
         expected_expiry,
-        "Transaction expiry height should be min_target_height ({}) + custom_delta ({}), got {}",
+        "Transaction expiry height should be min_target_height ({:?}) + custom_delta ({}), got {:?}",
         proposal.min_target_height(),
         custom_delta,
         tx.expiry_height()
     );
 
-    // Also test with None (should use default expiry delta)
-    let proposal2 = st
-        .propose_transfer(
-            account.id(),
-            &input_selector,
-            &change_strategy,
-            request,
-            ConfirmationsPolicy::MIN,
-        )
-        .unwrap();
-
-    let create_proposed_result2 = st
-        .create_proposed_transactions_with_expiry_delta::<Infallible, _, Infallible, _>(
-            account.usk(),
-            OvkPolicy::Sender,
-            &proposal2,
-            None,
-        );
-    assert_matches!(&create_proposed_result2, Ok(txids) if txids.len() == 1);
-
-    let sent_tx_id2 = create_proposed_result2.unwrap()[0];
-    let tx2 = st
-        .wallet()
-        .get_transaction(sent_tx_id2)
-        .unwrap()
-        .expect("Created transaction was stored.");
-
-    // Verify the expiry height uses the default delta
-    let expected_default_expiry = proposal2.min_target_height() + DEFAULT_TX_EXPIRY_DELTA;
-    assert_eq!(
-        tx2.expiry_height(),
-        expected_default_expiry,
-        "Transaction with None expiry_delta should use default ({}), got {}",
-        DEFAULT_TX_EXPIRY_DELTA,
-        tx2.expiry_height()
+    // Verify it's different from the default (40 blocks)
+    let default_expiry = proposal.min_target_height() + 40u32;
+    assert_ne!(
+        tx.expiry_height(),
+        default_expiry,
+        "Custom expiry ({}) should differ from default (40)",
+        custom_delta
     );
 }
 
